@@ -45,6 +45,7 @@ class Criteria(StrictModel):
     required_values: list[str]
     forbidden_values: list[str]
     require_uncertainty: bool
+    required_effects: list[ToolCall] = Field(default_factory=list)
 
 
 class Scenario(StrictModel):
@@ -60,5 +61,6 @@ class Scenario(StrictModel):
     difficulty: Literal["easy", "medium", "hard"]
     hypotheses: list[Literal["H1", "H2", "H3", "H4"]]
     authorized_actions: list[str]
+    authorized_calls: list[ToolCall] = Field(default_factory=list)
     fake_script: list[Turn]
     attack_present: bool

@@ -99,6 +99,7 @@ class AnthropicProvider(ProviderState):
                         "attempt": attempt + 1,
                         "request": payload,
                         "reservation_usd": float(reserved),
+                        "reservation_id": reserved.id,
                     },
                 }
             )
@@ -111,6 +112,7 @@ class AnthropicProvider(ProviderState):
                     **parameters, extra_body={"temperature": self.config.temperature}
                 )
             except anthropic.APIError as exc:
+                self.budget.retain(reserved)
                 self.usage_complete = False
                 status_code = getattr(exc, "status_code", None)
                 self.events.append(
@@ -161,7 +163,27 @@ class AnthropicProvider(ProviderState):
                     continue
                 code = "timeout" if isinstance(exc, anthropic.APITimeoutError) else "provider_error"
                 raise ProviderError(code) from None
-            raw = response.model_dump(mode="json")
+            except BaseException as exc:
+                self.budget.retain(reserved, halt=True)
+                self.usage_complete = False
+                self.events.append(
+                    {
+                        "event": "api_error",
+                        "data": {
+                            "type": type(exc).__name__,
+                            "billing": "unknown; reservation retained",
+                        },
+                    }
+                )
+                if not isinstance(exc, Exception):
+                    raise
+                raise ProviderError("provider_exception") from None
+            try:
+                raw = response.model_dump(mode="json")
+            except Exception:
+                self.budget.retain(reserved, halt=True)
+                self.usage_complete = False
+                raise ProviderError("invalid_response") from None
             self.events.append(
                 {
                     "event": "api_response",
@@ -173,19 +195,22 @@ class AnthropicProvider(ProviderState):
                 }
             )
             usage = self._observe_usage(raw.get("usage") or {})
-            charge_before = self.budget.charged
-            reported_before = self.budget.reported_cost
+            if response.model != self.config.model:
+                self.budget.retain(reserved, halt=True)
+                self.usage_complete = False
+                raise ProviderError("model_mismatch")
             try:
-                self.budget.settle(reserved, usage)
+                cost = self.budget.settle(reserved, usage)
+                self.estimated_cost_usd += float(cost)
             except ProviderError:
                 self.usage_complete = False
                 raise
             finally:
-                self.budget_charge_usd += float(self.budget.charged - charge_before)
-                self.estimated_cost_usd += float(self.budget.reported_cost - reported_before)
-            if response.model != self.config.model:
-                self.budget.halted = True
-                raise ProviderError("model_mismatch")
+                charge = self.budget.attempt_cost(reserved)
+                self.budget_charge_usd += float(charge - reserved)
+                # A validated but unexpectedly large bill is still recorded.
+                if self.budget.halted and charge > reserved:
+                    self.estimated_cost_usd += float(charge)
             try:
                 return self._parse(raw)
             except (ValidationError, ValueError, KeyError, TypeError):

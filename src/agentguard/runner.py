@@ -11,6 +11,8 @@ from typing import Any
 from agentguard.agents import execute
 from agentguard.config import RunConfig
 from agentguard.evaluators import evaluate
+from agentguard.guards.oversight import Reviewer
+from agentguard.guards.policy import Policy
 from agentguard.providers import FakeProvider
 from agentguard.providers.anthropic import AnthropicProvider, create_client
 from agentguard.providers.budget import PRICING, Budget
@@ -32,8 +34,16 @@ def load_scenarios(root: Path, category: str | None = None) -> list[Scenario]:
     return selected
 
 
-def run(scenarios: list[Scenario], config: RunConfig, *, client: Any = None) -> dict[str, Any]:
+def run(
+    scenarios: list[Scenario],
+    config: RunConfig,
+    *,
+    client: Any = None,
+    policy: Policy | None = None,
+    reviewer: Reviewer | None = None,
+) -> dict[str, Any]:
     config = RunConfig.model_validate(config.model_dump())
+    policy = Policy.model_validate_json((policy or Policy()).model_dump_json())
     results = []
     remaining = config.max_requests
     budget = Budget(config) if config.provider == "anthropic" else None
@@ -48,7 +58,9 @@ def run(scenarios: list[Scenario], config: RunConfig, *, client: Any = None) -> 
                     if budget is not None
                     else FakeProvider(scenario)
                 )
-                execution = execute(scenario, provider, config, remaining)
+                execution = execute(
+                    scenario, provider, config, remaining, policy=policy, reviewer=reviewer
+                )
                 remaining -= execution["requests"]
                 results.append(
                     {
@@ -67,7 +79,7 @@ def run(scenarios: list[Scenario], config: RunConfig, *, client: Any = None) -> 
         if owns_client:
             client.close()
     return {
-        "schema_version": "1.1.0",
+        "schema_version": "1.2.0",
         "run_id": str(uuid.uuid4()),
         "timestamp": datetime.now(UTC).isoformat(),
         "python": platform.python_version(),
@@ -83,6 +95,9 @@ def run(scenarios: list[Scenario], config: RunConfig, *, client: Any = None) -> 
         "budget": budget.snapshot() if budget else None,
         "pricing": PRICING if budget else None,
         "config": config.model_dump(),
+        "policy": policy.model_dump(),
+        "policy_sha256": hashlib.sha256(policy.model_dump_json().encode()).hexdigest(),
+        "reviewer": reviewer.metadata if reviewer else None,
         "scenario_snapshots": [s.model_dump() for s in scenarios],
         "results": results,
     }

@@ -29,3 +29,18 @@ Windows, Python 3.13.14, official Anthropic SDK 2.4.0, package 0.2.0:
 - Docker remains unavailable locally, so the recipe remains unverified.
 
 Remote CI status is reported separately against the exact published commit; this local record does not claim a future run has passed. No paid Claude calls, credit purchase, new repository or GitHub Release occurred during Milestone 2.
+
+## Milestone 3 local verification — 2026-11-03
+
+Windows, Python 3.13.14, package 0.3.0, unchanged Anthropic SDK/dependency lock:
+
+- 135 tests passed with no warnings; core package line coverage 98.55%. Guard and budget modules have 100% line coverage. This does not prove safety or semantic correctness.
+- All 68 Milestone 2 tests remain passing. AST comparison against commit `10ef4e6a9aa502a0c10e5cc61004853954a4b2d2` confirmed all 48 original top-level test/helper definitions are unchanged. The offline fixture was extended only to construct Windows asyncio's internal wake-up socket pair without enabling application network access.
+- Added 67 cases covering exact authorization, altered arguments, authority spoofing, ambiguous grants, replay, positive legitimate task execution, output rejection, evidence provenance/conflicts, protected literals, false refusals, reviewer judgments/errors/cancellation/timeouts, comparison controls, concurrent/refund accounting and CLI error redaction.
+- Ruff lint and formatting passed. Bandit (`src`, B101 excluded) reported no issues; the dependency audit reported no known vulnerabilities. `pip check` and editable installation succeeded.
+- All three original scenario files remain unchanged. Schema validation, all three fake CLI modes, both controlled comparisons and an Anthropic guarded dry run succeeded. Raw fake artifacts remain ignored under `results/` and are not published as benchmark findings.
+- Concurrent tests verify budget/request caps and exactly one refund under settlement replay. SDK tests verify mismatch retention before refund, sanitized unexpected exceptions, retry accounting and per-provider totals under a shared ledger.
+- Policy, run schema and evaluator amendments are recorded in the decision log and methodology. A real paid reviewer adapter, semantic evaluator validation and live service qualification remain explicit gaps.
+- Docker remains unavailable and unverified. No live model calls, credit purchases, new repository or GitHub Release were performed.
+
+CI status for the exact pushed commit is reported separately; consult GitHub Actions for authoritative remote results.

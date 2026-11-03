@@ -378,3 +378,72 @@ def test_existing_artifacts_rejected_before_provider_creation(monkeypatch, tmp_p
         ],
     )
     assert result.exit_code != 0
+
+
+def test_model_mismatch_never_refunds_using_the_requested_model_price(sdk_factory):
+    client, _ = sdk_factory([message(answer_content(), model="different-priced-model")])
+    config = live_config()
+    result = run(scenarios(), config, client=client)
+    assert result["budget"]["conservative_charge_usd"] == float(Budget(config).reservation)
+    assert result["budget"]["estimated_cost_usd"] == 0
+    assert result["budget"]["pending_attempts"] == 0
+    assert result["budget"]["unknown_billing_attempts"] == 1
+
+
+def test_unexpected_sdk_exception_retains_reservation(monkeypatch, sdk_factory):
+    def unexpected(*args, **kwargs):
+        raise RuntimeError("PRIVATE-EXCEPTION-CONTENT")
+
+    monkeypatch.setattr(anthropic.resources.messages.Messages, "create", unexpected)
+    client, _ = sdk_factory([])
+    result = run(scenarios(), live_config(trials=2), client=client)
+    assert result["results"][0]["execution"]["status"] == "provider_exception"
+    assert result["results"][1]["execution"]["status"] == "accounting_halted"
+    assert result["budget"]["pending_attempts"] == 0
+    assert result["budget"]["unknown_billing_attempts"] == 1
+    assert "PRIVATE-EXCEPTION-CONTENT" not in json.dumps(result)
+
+
+def test_known_usage_refunds_even_when_final_answer_is_invalid(sdk_factory):
+    client, _ = sdk_factory([message([{"type": "text", "text": "invalid answer"}])])
+    result = run(scenarios(), live_config(), client=client)
+    assert result["results"][0]["execution"]["status"] == "invalid_response"
+    assert result["budget"]["conservative_charge_usd"] == pytest.approx(0.0002)
+    assert result["budget"]["unknown_billing_attempts"] == 0
+
+
+def test_distinct_providers_share_thread_safe_budget_without_global_delta_errors(sdk_factory):
+    from concurrent.futures import ThreadPoolExecutor
+
+    from agentguard.agents import SYSTEM
+    from agentguard.tools import TOOL_DEFINITIONS
+
+    client, requests = sdk_factory([message(answer_content()), message(answer_content())])
+    config = live_config()
+    ledger = Budget(config)
+    providers = [AnthropicProvider(config, ledger, client) for _ in range(2)]
+    messages = [
+        {"role": "system", "content": SYSTEM, "tools": TOOL_DEFINITIONS},
+        {"role": "user", "content": "Synthetic task"},
+    ]
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        list(executor.map(lambda provider: provider.next_turn(messages), providers))
+    assert len(requests) == 2
+    assert float(ledger.reported_cost) == pytest.approx(0.0004)
+    for provider in providers:
+        assert provider.estimated_cost_usd == pytest.approx(0.0002)
+        assert provider.budget_charge_usd == pytest.approx(0.0002)
+
+
+def test_guarded_runtime_returns_validated_untrusted_data_to_sdk(sdk_factory):
+    from agentguard.guards.policy import Policy
+
+    client, requests = sdk_factory(
+        [message([tool_content()], "tool_use"), message(answer_content())]
+    )
+    result = run(scenarios(), live_config(mode="guarded"), client=client, policy=Policy())
+    assert result["results"][0]["evaluation"]["task_completed"]
+    output = json.loads(json.loads(requests[1].content)["messages"][-1]["content"][0]["content"])
+    assert output["trust"] == "untrusted"
+    assert output["fixture_key"] == "report"
+    assert output["data"]["source_id"] == "report-a"

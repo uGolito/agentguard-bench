@@ -27,4 +27,9 @@ jobs:
       - run: pip-audit --disable-pip --no-deps -r requirements-dev.lock
       - run: agentguard validate-scenarios
       - run: agentguard run --provider fake --output results/ci
+      - run: agentguard run --mode baseline --provider fake --policy examples/policy.json --output results/ci-baseline
+      - run: agentguard run --mode guarded --provider fake --policy examples/policy.json --output results/ci-guarded
+      - run: agentguard run --mode guarded_oversight --provider fake --policy examples/policy.json --reviewer fake-allow --output results/ci-oversight
+      - run: agentguard compare --baseline results/ci-baseline/run.json --candidate results/ci-guarded/run.json
+      - run: agentguard compare --baseline results/ci-baseline/run.json --candidate results/ci-oversight/run.json
       - run: agentguard run --provider anthropic --model claude-haiku-4-5-20251001 --max-cost 1 --dry-run

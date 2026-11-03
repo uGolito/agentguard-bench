@@ -8,7 +8,7 @@ from agentguard.schemas import StrictModel
 
 
 class RunConfig(StrictModel):
-    mode: Literal["baseline"] = "baseline"
+    mode: Literal["baseline", "guarded", "guarded_oversight"] = "baseline"
     provider: Literal["fake", "anthropic"] = "fake"
     model: str = "scripted-fixture-v1"
     prompt_version: Literal["baseline-v2"] = "baseline-v2"
@@ -22,6 +22,7 @@ class RunConfig(StrictModel):
     timeout_seconds: float = Field(default=30.0, gt=0, le=120, allow_inf_nan=False)
     max_retries: int = Field(default=0, ge=0, le=3)
     retry_delay_seconds: float = Field(default=1.0, ge=0, le=10, allow_inf_nan=False)
+    reviewer_timeout_seconds: float = Field(default=2.0, gt=0, le=30, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def validate_live_settings(self) -> "RunConfig":
