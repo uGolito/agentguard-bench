@@ -1,6 +1,7 @@
 """Scenario discovery and reproducible run manifests."""
 
 import hashlib
+import importlib.metadata
 import platform
 import uuid
 from datetime import UTC, datetime
@@ -11,6 +12,8 @@ from agentguard.agents import execute
 from agentguard.config import RunConfig
 from agentguard.evaluators import evaluate
 from agentguard.providers import FakeProvider
+from agentguard.providers.anthropic import AnthropicProvider, create_client
+from agentguard.providers.budget import PRICING, Budget
 from agentguard.schemas import Scenario
 
 
@@ -29,32 +32,56 @@ def load_scenarios(root: Path, category: str | None = None) -> list[Scenario]:
     return selected
 
 
-def run(scenarios: list[Scenario], config: RunConfig) -> dict[str, Any]:
+def run(scenarios: list[Scenario], config: RunConfig, *, client: Any = None) -> dict[str, Any]:
+    config = RunConfig.model_validate(config.model_dump())
     results = []
     remaining = config.max_requests
-    for trial in range(config.trials):
-        for scenario in scenarios:
-            execution = execute(scenario, FakeProvider(scenario), config, remaining)
-            remaining -= execution["requests"]
-            results.append(
-                {
-                    "scenario_id": scenario.id,
-                    "version": scenario.version,
-                    "category": scenario.category,
-                    "trial": trial,
-                    "scenario_sha256": hashlib.sha256(
-                        scenario.model_dump_json().encode()
-                    ).hexdigest(),
-                    "execution": execution,
-                    "evaluation": evaluate(scenario, execution),
-                }
-            )
+    budget = Budget(config) if config.provider == "anthropic" else None
+    owns_client = config.provider == "anthropic" and client is None
+    if owns_client:
+        client = create_client(config)
+    try:
+        for trial in range(config.trials):
+            for scenario in scenarios:
+                provider = (
+                    AnthropicProvider(config, budget, client)
+                    if budget is not None
+                    else FakeProvider(scenario)
+                )
+                execution = execute(scenario, provider, config, remaining)
+                remaining -= execution["requests"]
+                results.append(
+                    {
+                        "scenario_id": scenario.id,
+                        "version": scenario.version,
+                        "category": scenario.category,
+                        "trial": trial,
+                        "scenario_sha256": hashlib.sha256(
+                            scenario.model_dump_json().encode()
+                        ).hexdigest(),
+                        "execution": execution,
+                        "evaluation": evaluate(scenario, execution),
+                    }
+                )
+    finally:
+        if owns_client:
+            client.close()
     return {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "run_id": str(uuid.uuid4()),
         "timestamp": datetime.now(UTC).isoformat(),
         "python": platform.python_version(),
-        "provider_metadata": {"name": "fake", "live": False, "version": "1"},
+        "package_version": importlib.metadata.version("agentguard-bench"),
+        "provider_metadata": {
+            "name": config.provider,
+            "live": config.provider != "fake",
+            "sdk_version": importlib.metadata.version("anthropic") if budget else None,
+            "model": config.model,
+            "sdk_retries": 0 if budget else None,
+            "client_injected": client is not None and not owns_client,
+        },
+        "budget": budget.snapshot() if budget else None,
+        "pricing": PRICING if budget else None,
         "config": config.model_dump(),
         "scenario_snapshots": [s.model_dump() for s in scenarios],
         "results": results,

@@ -6,9 +6,9 @@ Open-source research infrastructure for evaluating the safety, reliability, and 
 
 ## Status and results
 
-**Milestone 1: offline core foundation.** Three original synthetic scenarios exercise a scripted fake provider. No live LLM benchmark results have been published yet.
+**Milestone 2: Anthropic integration implemented and tested offline.** Three original synthetic scenarios support the scripted fake provider and an optional official Anthropic SDK adapter. No live LLM benchmark results have been published yet.
 
-Fake-provider outcomes test infrastructure, not model behavior or agent safety. There are no paid API calls, network tools, real emails, or external mutations. Passing tests does not establish safety.
+Fake-provider and mocked SDK outcomes test infrastructure, not model behavior or agent safety. No paid model calls have been executed for this milestone. All tools remain local simulations: no real emails or external mutations. Live model requests require a separate explicit opt-in and a positive budget. Passing tests does not establish safety.
 
 ## Motivation and research questions
 
@@ -23,13 +23,14 @@ flowchart LR
     CLI --> Runner
     Scenarios[Versioned scenarios] --> Runner
     Runner --> Runtime[Bounded message runtime]
-    Runtime --> Provider[Provider protocol / scripted fake]
+    Runtime --> Provider[Provider protocol / fake or Anthropic SDK]
+    Provider --> Budget[Shared request and spending ledger]
     Runtime --> Tools[Six synthetic local tools]
     Runtime --> Evaluator[Deterministic evaluator]
     Evaluator --> Artifacts[JSON / JSONL / CSV / Markdown]
 ```
 
-The runtime owns message roles, step limits, and tool dispatch. The provider proposes structured calls or answers. Tools execute only synthetic in-memory effects. The evaluator independently checks scenario criteria; it is not a runtime safeguard. Baseline tool inputs have mandatory interface validation for executable Python safety; output validation and authorization enforcement are deferred. This shared minimum must remain constant in future comparisons.
+The runtime owns message roles, step limits, and tool dispatch, including multiple tool calls per response. The adapter preserves Claude tool-use IDs and sends grouped tool results through the official SDK. It never uses an SDK automatic tool runner. A shared ledger reserves spending before every HTTP attempt, including retries. Tools execute only synthetic in-memory effects. The evaluator checks scenario criteria independently; it is not a runtime safeguard. Baseline has mandatory input interfaces and SDK/answer-format parsing. Authorization, provenance and semantic output safeguards remain deferred.
 
 ## Installation
 
@@ -61,6 +62,18 @@ agentguard compare --baseline results/run-a/run.json --candidate results/run-a/r
 
 Each output directory must be new, protecting prior artifacts. `--scenarios PATH` selects another checkout's scenario directory. `--category`, `--trials`, and `--max-steps` restrict execution. Request limits apply across the whole run; exhausted scenarios are retained as incomplete. Fake calls cost zero, so `--max-cost` is recorded but is not a live cost enforcement mechanism.
 
+### Anthropic integration (no live results yet)
+
+The initial supported priced snapshot is `claude-haiku-4-5-20251001`. Aliases and unpriced models are rejected so a model switch cannot silently invalidate spending estimates. SDK version 2.4.0 is pinned in the development lock. Its HTTP transport is `httpx2`; the original `httpx` dependency remains intact.
+
+This preview requires neither a key nor live opt-in and makes **zero API calls**:
+
+```bash
+agentguard run --provider anthropic --model claude-haiku-4-5-20251001 --max-requests 6 --max-cost 1 --max-tokens 512 --dry-run
+```
+
+Only after separately approving a paid evaluation, provide `ANTHROPIC_API_KEY` through the process environment and add `--allow-live` instead of `--dry-run`. The application does not load `.env` files or provision keys. Live use is blocked when `CI` is set. This implementation and its CI require no API credentials. See [CLI documentation](docs/cli.md) and [cost controls](docs/cost_controls.md).
+
 ## Scenario examples
 
 - `pi-001`: a revenue report embeds a fake system override requesting disclosure of a visibly synthetic canary. The authorized task is a revenue summary.
@@ -71,11 +84,11 @@ Each JSON file includes version, objective, threat model, fixtures, authorized b
 
 ## Experimental configurations
 
-A (baseline) is implemented. B (guarded: authorization, output validation, evidence verification) and C (guarded plus independent model review) are planned for Milestone 3. Requests for unimplemented modes or live providers fail explicitly. The same scenarios, tools, step limits, model parameters, and evaluator must be used when comparing configurations. Reviewer behavior and tool outcomes will be measured separately from primary agent behavior.
+A (baseline) is implemented with fake and Anthropic providers. B (guarded: authorization, semantic output validation, evidence verification) and C (guarded plus independent model review) are planned for Milestone 3. Unimplemented modes fail explicitly. The same scenarios, tools, step limits, model parameters, prompt version, and evaluator must be used in future comparisons. Reviewer behavior and tool outcomes will be measured separately from primary agent behavior.
 
 ## Metrics and reproducibility
 
-Reports include raw numerators and denominators for attack success, task completion, unauthorized-action episodes, and false refusal. Definitions and eligibility are in the methodology. JSON records include immutable UUID run identity, UTC timestamp, exact fake-model ID, configuration, trial IDs, complete scenario snapshots and SHA-256 fingerprints, outcomes, latency, requests, and simulated effects. JSONL records every provider turn and tool response. Token usage is `null` (not applicable), cost is zero. Keep raw artifacts, including failures; generated results are ignored by Git to avoid accidental publication of future sensitive traces.
+Reports include raw numerators and denominators for attack success, task completion, unauthorized-action episodes, and false refusal. Definitions and eligibility are in the methodology. JSON records include UUID identity, UTC timestamp, exact model ID, package/SDK versions, configuration, trial IDs, complete scenario snapshots and SHA-256 fingerprints, outcomes, latency, requests, and simulated effects. JSONL includes API request payloads, raw model responses, tool calls/results, retries and sanitized errors. Input/output/cache token counts, usage completeness, usage-based cost estimates and conservative unknown-billing reservations are recorded separately. Fake token usage remains `null` and cost zero. Keep all raw artifacts, including failures; results are ignored by Git and never automatically published.
 
 ## Verification
 
@@ -87,14 +100,14 @@ bandit -r src -s B101
 pip-audit --disable-pip --no-deps -r requirements-dev.lock
 ```
 
-GitHub Actions runs offline tests on Python 3.12 and 3.13 without API credentials. Dependency installation and vulnerability auditing require internet access. Docker support is a convenience recipe; see the validation record for whether it was executed.
+GitHub Actions runs offline tests on Python 3.12 and 3.13 without API credentials. An autouse test fixture blocks socket connections and DNS. Official SDK integration tests use an in-memory HTTP transport. Dependency installation and vulnerability auditing require internet access; there are no paid model calls. Docker support remains a convenience recipe; see the validation record for whether it was executed.
 
 ## Known limitations and roadmap
 
-Three easy scenarios cannot represent real deployment risk. The fake provider ignores message content; its scripted answers reveal nothing about resistance to attacks. Deterministic criteria are narrow and gameable; no semantic judge or verified provenance enforcement exists yet.
+Three easy scenarios cannot represent real deployment risk. The fake provider ignores message content; its scripted answers reveal nothing about resistance to attacks. SDK mocks verify wire compatibility, not service availability or model performance. Deterministic criteria are narrow and gameable; final answers must use the benchmark JSON schema. No semantic judge or verified provenance enforcement exists yet. Cost limits use conservative estimates rather than a billing guarantee, and socket timeouts are not a strict overall wall-clock deadline.
 
 1. Core foundation: this milestone.
-2. Official Anthropic SDK, real tool calling, usage accounting, conservative budgets, timeouts and bounded retries. Paid runs require separate explicit approval.
+2. Implemented: official Anthropic SDK, real tool-call handling, usage accounting, conservative budgets, timeouts and bounded retries. Live service validation remains unperformed; paid runs require separate explicit approval.
 3. Independently tested safeguards, evidence verification and independent oversight; false-positive/negative and overhead measurement.
 4. Thirty scenarios, repeated trials, statistical reporting and expanded container validation.
 5. Research report, reproducibility audit and validated release, subject to explicit release approval.

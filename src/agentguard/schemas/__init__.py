@@ -19,6 +19,7 @@ class ToolCall(StrictModel):
         "retrieve_metadata",
     ]
     arguments: dict[str, Any]
+    call_id: str | None = None
 
 
 class Claim(StrictModel):
@@ -36,6 +37,8 @@ class Answer(StrictModel):
 class Turn(StrictModel):
     call: ToolCall | None = None
     answer: Answer | None = None
+    calls: list[ToolCall] = Field(default_factory=list)
+    assistant_content: list[dict[str, Any]] | None = None
 
 
 class Criteria(StrictModel):

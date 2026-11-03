@@ -5,6 +5,9 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ''
+      ANTHROPIC_AUTH_TOKEN: ''
     strategy:
       matrix:
         python: ['3.12', '3.13']
@@ -24,3 +27,4 @@ jobs:
       - run: pip-audit --disable-pip --no-deps -r requirements-dev.lock
       - run: agentguard validate-scenarios
       - run: agentguard run --provider fake --output results/ci
+      - run: agentguard run --provider anthropic --model claude-haiku-4-5-20251001 --max-cost 1 --dry-run

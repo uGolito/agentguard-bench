@@ -1,4 +1,4 @@
-"""Explicitly offline command line interface."""
+"""Offline by default; live requests require explicit opt-in and a positive budget."""
 
 import json
 from pathlib import Path
@@ -33,27 +33,55 @@ def run(
     scenarios: ScenarioPath = Path("scenarios"),
     mode: str = "baseline",
     provider: str = "fake",
+    model: str | None = None,
+    allow_live: bool = False,
     category: str | None = None,
     max_steps: int = 8,
     max_requests: int = 100,
     max_cost: float = 0.0,
     trials: int = 1,
+    max_tokens: int = 512,
+    temperature: float = 0.0,
+    timeout: float = 30.0,
+    max_retries: int = 0,
     dry_run: bool = False,
     output: Path = Path("results/offline"),
 ) -> None:
-    """Run synthetic fixtures. Live providers and guarded modes arrive in later milestones."""
-    if mode != "baseline" or provider != "fake":
-        raise typer.BadParameter("Milestone 1 supports --mode baseline --provider fake only")
+    """Run baseline agents. --allow-live permits paid Anthropic calls; dry runs never call APIs."""
+    if mode != "baseline" or provider not in ("fake", "anthropic"):
+        raise typer.BadParameter("Supported: --mode baseline --provider fake|anthropic")
     try:
         config = RunConfig(
-            max_steps=max_steps, max_requests=max_requests, max_cost=max_cost, trials=trials
+            provider=provider,
+            model=model or "scripted-fixture-v1",
+            allow_live=allow_live or dry_run,
+            max_steps=max_steps,
+            max_requests=max_requests,
+            max_cost=max_cost,
+            trials=trials,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            timeout_seconds=timeout,
+            max_retries=max_retries,
         )
         selected = load_scenarios(scenarios, category)
         if dry_run:
-            typer.echo(f"Offline plan: {len(selected)} scenarios x {trials} trials; cost $0")
+            if provider == "anthropic":
+                from agentguard.providers.budget import Budget
+
+                reservation = Budget(config).snapshot()["next_attempt_reservation_usd"]
+                typer.echo(
+                    f"NO API CALLS: {len(selected)} scenarios x {trials} trials; "
+                    f"reserve ${reservation:.6f}/attempt; cap ${max_cost}; "
+                    f"requests <= {max_requests}"
+                )
+            else:
+                typer.echo(f"Offline plan: {len(selected)} scenarios x {trials} trials; cost $0")
             return
+        # Reserve a writable artifact directory before any potentially billable work.
+        output.mkdir(parents=True, exist_ok=False)
         result = run_benchmark(selected, config)
-        write_run(result, output)
+        write_run(result, output, directory_prepared=True)
         typer.echo(str(output / "run.json"))
     except (ValueError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from exc

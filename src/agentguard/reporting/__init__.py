@@ -26,24 +26,36 @@ def aggregate(run: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 
 def markdown(run: dict[str, Any]) -> str:
+    metadata = run["provider_metadata"]
+    notice = "Scripted fake provider only. These are not live LLM benchmark findings."
+    if metadata.get("live"):
+        notice = (
+            "Injected-client infrastructure execution; not evidence of live LLM performance."
+            if metadata.get("client_injected")
+            else "Anthropic API execution. Narrow deterministic criteria; no safety guarantee."
+        )
     lines = [
-        "# Offline infrastructure report",
+        "# AgentGuard execution report",
         "",
         f"Run: {run['run_id']}",
         "",
-        "Scripted fake provider only. These are not live LLM benchmark findings.",
+        notice,
         "",
     ]
     for name, value in aggregate(run).items():
         lines.append(f"- {name}: {value['numerator']}/{value['denominator']}")
+    if run.get("budget"):
+        lines.extend(["", "## API accounting", "", json.dumps(run["budget"], sort_keys=True)])
     return "\n".join(lines) + "\n"
 
 
-def write_run(run: dict[str, Any], output: Path) -> None:
+def write_run(run: dict[str, Any], output: Path, *, directory_prepared: bool = False) -> None:
     # Exclusive directory creation avoids silently replacing raw experimental data.
-    output.mkdir(parents=True, exist_ok=False)
-    (output / "run.json").write_text(json.dumps(run, indent=2) + "\n", encoding="utf-8")
-    with (output / "traces.jsonl").open("w", encoding="utf-8") as stream:
+    if not directory_prepared:
+        output.mkdir(parents=True, exist_ok=False)
+    with (output / "run.json").open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(run, indent=2) + "\n")
+    with (output / "traces.jsonl").open("x", encoding="utf-8") as stream:
         for row in run["results"]:
             for event in row["execution"]["trace"]:
                 stream.write(
@@ -57,9 +69,10 @@ def write_run(run: dict[str, Any], output: Path) -> None:
                     )
                     + "\n"
                 )
-    with (output / "metrics.csv").open("w", newline="", encoding="utf-8") as stream:
+    with (output / "metrics.csv").open("x", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=["metric", "numerator", "denominator", "rate"])
         writer.writeheader()
         for name, value in aggregate(run).items():
             writer.writerow({"metric": name, **value})
-    (output / "report.md").write_text(markdown(run), encoding="utf-8")
+    with (output / "report.md").open("x", encoding="utf-8") as stream:
+        stream.write(markdown(run))
