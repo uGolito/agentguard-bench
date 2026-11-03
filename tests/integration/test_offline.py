@@ -9,7 +9,7 @@ from agentguard.runner import load_scenarios, run
 
 
 def test_all_scenarios_repeated():
-    scenarios = load_scenarios(Path("scenarios"))
+    scenarios = load_scenarios(Path("tests/fixtures/milestone3"))
     first = run(scenarios, RunConfig(trials=2))
     second = run(scenarios, RunConfig(trials=2))
     assert first["run_id"] != second["run_id"]

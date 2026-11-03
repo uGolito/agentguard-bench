@@ -13,7 +13,7 @@ Local verification on 2026-11-03, Windows, Python 3.13.14:
 
 GitHub Actions checks the published commit on Python 3.12 and 3.13; consult the repository Actions page for authoritative remote execution status. No live model evaluation or GitHub Release was performed.
 
-## Milestone 2 local verification — 2026-11-03
+## Milestone 2 local verification â€” 2026-11-03
 
 Windows, Python 3.13.14, official Anthropic SDK 2.4.0, package 0.2.0:
 
@@ -30,7 +30,7 @@ Windows, Python 3.13.14, official Anthropic SDK 2.4.0, package 0.2.0:
 
 Remote CI status is reported separately against the exact published commit; this local record does not claim a future run has passed. No paid Claude calls, credit purchase, new repository or GitHub Release occurred during Milestone 2.
 
-## Milestone 3 local verification — 2026-11-03
+## Milestone 3 local verification â€” 2026-11-03
 
 Windows, Python 3.13.14, package 0.3.0, unchanged Anthropic SDK/dependency lock:
 
@@ -44,3 +44,17 @@ Windows, Python 3.13.14, package 0.3.0, unchanged Anthropic SDK/dependency lock:
 - Docker remains unavailable and unverified. No live model calls, credit purchases, new repository or GitHub Release were performed.
 
 CI status for the exact pushed commit is reported separately; consult GitHub Actions for authoritative remote results.
+
+## Milestone 4A local verification — 2026-11-03
+
+Windows, Python 3.13.14, package 0.4.0, unchanged locked SDK/dependencies:
+
+- 177 offline tests passed (all original 135 regression cases plus 42 new cases); package line coverage 97.26%. Original corpus fixtures are selected explicitly by old three-case regression tests; new tests exercise all 30 default assets. See integrity_audit.md for the migration and limitations.
+- Editable installation, Ruff lint/format, pip check, Bandit and dependency-advisory auditing were executed. Bandit's three noncryptographic random-generator findings are narrowly annotated B311 with reproducible-scheduling/statistical reasons; no global B311 suppression was added. Vulnerability audit found no known vulnerabilities; unhashed dependency pins remain a supply-chain limitation.
+- CLI validation found 30 scenarios, ten per category (16 attack-present, 14 benign). A full two-trial fake A/B/C paired run completed 180 episodes and controlled comparisons. These are infrastructure checks, not real LLM findings; raw fake artifacts remain ignored under results/.
+- The six-case, two-trial real-reviewer qualification dry-run confirmed 36 planned A/B/C episodes, at most 120 requests and a $3 total estimated cap with zero API calls.
+- Mocked official sync/async SDK transports exercise reviewer isolation, structured decisions, invalid responses, retry/timeout/cancellation, shared spending/request caps, failed-verdict usage and model identity checks. Additional tests reject mismatched ledgers and correctly classify a malformed replay after authorization consumption.
+- Original pi-001, tm-001 and ce-001 source assets remain unchanged. Secret/confidential-data review covers tracked source/docs/scenarios; only synthetic canaries and dummy test credentials are present. No real evaluation data are published.
+- Docker execution remains unverified. No paid calls, credit purchases, new repository or GitHub Release occurred.
+
+Remote Python 3.12/3.13 CI is verified after pushing; the completion report links the exact commit/run. Local results alone do not assert remote CI success.

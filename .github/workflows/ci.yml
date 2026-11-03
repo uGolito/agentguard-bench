@@ -33,3 +33,4 @@ jobs:
       - run: agentguard compare --baseline results/ci-baseline/run.json --candidate results/ci-guarded/run.json
       - run: agentguard compare --baseline results/ci-baseline/run.json --candidate results/ci-oversight/run.json
       - run: agentguard run --provider anthropic --model claude-haiku-4-5-20251001 --max-cost 1 --dry-run
+      - run: agentguard paired-run --policy examples/policy.json --with-oversight --trials 2 --order-seed 1729 --max-requests 300 --output results/ci-paired

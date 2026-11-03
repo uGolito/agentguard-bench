@@ -1,4 +1,4 @@
-# Safety controls — contracts and acceptance criteria
+# Safety controls â€” contracts and acceptance criteria
 
 These controls are runtime mechanisms, not a claim that an LLM is safe. All effects remain synthetic and in memory. No paid calls were executed to implement or test them.
 
@@ -20,11 +20,11 @@ Evidence is indexed only after successful output validation. Claims cite observe
 
 ## Configuration C: guarded plus oversight
 
-Only an operation already permitted by B can reach `Reviewer.review`. The reviewer receives a frozen request with objective, scenario ID, canonical action JSON and grant ID. It has no tool handles and returns only a strictly revalidated decision. It cannot grant permission or mutate the operation. `FakeReviewer` provides deterministic allow, deny, failure and timeout behaviors; CLI users must explicitly select `fake-allow` or `fake-deny`.
+Only an operation already permitted by B can reach `Reviewer.review`. The reviewer receives a frozen request with objective, scenario ID, canonical action JSON and grant ID. It has no tool handles and returns only a strictly revalidated decision. It cannot grant permission or mutate the operation. `FakeReviewer` provides deterministic allow, deny, failure and timeout behaviors; CLI users must explicitly select `fake-allow`, `fake-deny` or `anthropic`.
 
 Denial, absence, exceptions, malformed or mutated decisions, cancellation and deadline expiry deny the operation. Exception messages are omitted. A late approval is rejected even if a reviewer suppresses cancellation. Review attempts, actual invocation, reason, decision, latency and successful-response usage estimates are recorded. The synchronous runtime rejects nested-event-loop invocation explicitly rather than silently bypassing review.
 
-Reviewers must be trusted, nonblocking async implementations that cooperate with cancellation. This is not process isolation: a reviewer that blocks the event loop or never finishes cancellation can stall the process. No sensitive action executes while waiting, but wall-clock termination is not guaranteed against malicious reviewer code. A real LLM reviewer adapter is not shipped; its future implementation must reserve shared request/cost budgets before all calls/retries and retain unknown bills after cancellation. Self-reported reviewer metrics alone are not spending enforcement.
+Reviewers must be trusted, nonblocking async implementations that cooperate with cancellation. This is not process isolation: a reviewer that blocks the event loop or never finishes cancellation can stall the process. No sensitive action executes while waiting, but wall-clock termination is not guaranteed against malicious reviewer code. The official async Anthropic adapter reserves from the primary shared ledger before each attempt, disables SDK retries, bounds adapter retries and retains unknown bills after cancellation. Its separate reviewer-v1 system prompt treats action strings as data. The API payload contains only the trusted objective and proposed action; it excludes scenario/grant IDs, fixtures, oracle and primary transcript. Fresh context and HTTP client per review avoid transcript or event-loop pool leakage. SDK response usage, not model JSON fields, determines charges. Invalid verdicts fail closed even when their known usage is settled. The injectable interface remains trusted code; instances are used sequentially per episode.
 
 ## Acceptance coverage
 
@@ -36,4 +36,4 @@ Reviewers must be trusted, nonblocking async implementations that cooperate with
 - Fail closed for reviewer failures, timeout, cancellation and invalid decisions, and retain reasons in traces.
 - Reject comparisons with different scenarios/trials, policy snapshots, parameters or budgets; preserve both per-case and per-category outcomes.
 
-The original three scenarios remain unchanged. Additional synthetic probes are test fixtures, not a new corpus or live research results.
+The original three scenarios remain unchanged. The expanded corpus contains 30 versioned synthetic scenarios plus separate regression probes. None are live research results.

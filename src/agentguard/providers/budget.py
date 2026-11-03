@@ -119,15 +119,32 @@ class Budget:
         with self._lock:
             self._halted = value
 
-    def reserve(self) -> Reservation:
+    def reserve(self, *, max_output_tokens: int | None = None) -> Reservation:
         with self._lock:
             if self._halted:
                 raise ProviderError("accounting_halted")
             if self.requests >= self.max_requests:
                 raise ProviderError("request_limit")
-            if self.charged + self.reservation > self.max_cost:
+            if max_output_tokens is not None and (
+                type(max_output_tokens) is not int or not 64 <= max_output_tokens <= 4096
+            ):
+                raise ValueError("Invalid output-token reservation")
+            amount = (
+                self.reservation
+                if max_output_tokens is None
+                else (
+                    (
+                        Decimal(PRICING["context_tokens"])
+                        * Decimal(PRICING["cache_write_usd_per_million"])
+                        + Decimal(max_output_tokens) * Decimal(PRICING["output_usd_per_million"])
+                    )
+                    / Decimal(1_000_000)
+                    * Decimal(PRICING["safety_multiplier"])
+                )
+            )
+            if self.charged + amount > self.max_cost:
                 raise ProviderError("cost_limit")
-            token = Reservation(self.reservation)
+            token = Reservation(amount)
             self._attempts[token.id] = (token, "pending")
             self.requests += 1
             self.charged += token
@@ -139,12 +156,29 @@ class Budget:
         if attempt is None or attempt[0] is not token or attempt[1] != "pending":
             raise ProviderError("invalid_reservation")
 
+    def matches(self, config: RunConfig) -> bool:
+        expected = Budget(config)
+        return (
+            self.max_cost == expected.max_cost
+            and self.max_requests == expected.max_requests
+            and self.reservation == expected.reservation
+        )
+
     def retain(self, token: Reservation, *, halt: bool = False) -> None:
         """Finalize unknown billing without refunding it. Replays cannot settle it later."""
         with self._lock:
             self._validate(token)
             self._attempts[token.id] = (token, "unknown")
             self._halted = self._halted or halt
+
+    def retain_if_pending(self, token: Reservation, *, halt: bool = True) -> None:
+        """Exception/cancellation cleanup without replaying an already finalized attempt."""
+        with self._lock:
+            attempt = self._attempts.get(token.id)
+            if attempt is None or attempt[0] is not token:
+                raise ProviderError("invalid_reservation")
+            if attempt[1] == "pending":
+                self.retain(token, halt=halt)
 
     def settle(self, reservation: Reservation, usage: dict[str, Any]) -> Decimal:
         with self._lock:
@@ -172,6 +206,17 @@ class Budget:
             if attempt is None or attempt[0] is not token:
                 raise ProviderError("invalid_reservation")
             return self._costs.get(token.id, token)
+
+    def attempt_snapshot(self, token: Reservation) -> dict[str, Any]:
+        with self._lock:
+            attempt = self._attempts.get(token.id)
+            if attempt is None or attempt[0] is not token:
+                raise ProviderError("invalid_reservation")
+            return {
+                "state": attempt[1],
+                "known_cost": self._costs.get(token.id),
+                "charge": self._costs.get(token.id, token),
+            }
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:

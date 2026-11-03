@@ -67,6 +67,8 @@ class AnthropicProvider(ProviderState):
         self.config = RunConfig.model_validate(config.model_dump())
         if config.provider != "anthropic":
             raise ValueError("AnthropicProvider requires provider=anthropic")
+        if not budget.matches(config):
+            raise ValueError("Shared budget does not match the recorded configuration")
         self.budget = budget
         # SDK 2.4 copy() does not inherit its strict-validation flag.
         # Reapply it explicitly; the wire tests cover this pinned SDK behavior.

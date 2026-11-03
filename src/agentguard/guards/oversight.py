@@ -59,6 +59,8 @@ def review_action(
         "request": request.model_dump(),
         "invoked": False,
     }
+    before = dict(getattr(reviewer, "accounting", {}))
+    event_offset = len(getattr(reviewer, "events", []))
     if reviewer is not None:
         try:
             asyncio.get_running_loop()
@@ -93,4 +95,8 @@ def review_action(
             record["reason"] = "reviewer_error"
             record["error_type"] = type(exc).__name__
     record["latency_seconds"] = perf_counter() - started
+    after = dict(getattr(reviewer, "accounting", {}))
+    if after:
+        record["accounting"] = {key: value - before.get(key, 0) for key, value in after.items()}
+        record["trace"] = list(getattr(reviewer, "events", [])[event_offset:])
     return record

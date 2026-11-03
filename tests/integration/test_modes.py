@@ -22,6 +22,8 @@ def test_cli_all_modes_share_identical_scenarios_and_controls(tmp_path):
         output = tmp_path / mode
         args = [
             "run",
+            "--scenarios",
+            "tests/fixtures/milestone3",
             "--mode",
             mode,
             "--provider",
@@ -85,7 +87,7 @@ def test_cli_policy_errors_do_not_echo_protected_values(tmp_path):
     "change", ["policy", "hash", "trials", "duplicates", "transport", "sdk", "package"]
 )
 def test_compare_rejects_uncontrolled_inputs(change):
-    source = run(load_scenarios(Path("scenarios")), RunConfig())
+    source = run(load_scenarios(Path("tests/fixtures/milestone3")), RunConfig())
     candidate = json.loads(json.dumps(source))
     if change == "policy":
         candidate["policy_sha256"] = "different-policy"
@@ -106,7 +108,7 @@ def test_compare_rejects_uncontrolled_inputs(change):
 
 
 def test_cli_compare_reports_control_mismatch(tmp_path):
-    a = run(load_scenarios(Path("scenarios")), RunConfig())
+    a = run(load_scenarios(Path("tests/fixtures/milestone3")), RunConfig())
     b = json.loads(json.dumps(a))
     b["config"]["max_steps"] += 1
     for name, data in [("a.json", a), ("b.json", b)]:

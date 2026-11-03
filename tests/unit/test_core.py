@@ -15,7 +15,7 @@ from agentguard.tools import INPUTS, SyntheticTools
 
 @pytest.fixture
 def scenario():
-    return load_scenarios(Path("scenarios"))[1]
+    return load_scenarios(Path("tests/fixtures/milestone3"))[1]
 
 
 def test_strict_config():
@@ -58,7 +58,9 @@ def test_invalid_turn(scenario):
 def test_errors_recorded(scenario):
     scenario.fake_script = [Turn(call=ToolCall(name="fetch_report", arguments={"key": "absent"}))]
     result = execute(scenario, FakeProvider(scenario), RunConfig(max_steps=1), 10)
-    assert result["trace"][1]["data"] == {"error": "KeyError"}
+    assert next(e for e in result["trace"] if e["event"] == "tool_result")["data"] == {
+        "error": "KeyError"
+    }
 
 
 def test_evaluator_detects_failure(scenario):
@@ -107,7 +109,7 @@ def test_runtime_records_unauthorized_proposal(scenario):
 
 
 def test_confidence_without_support_fails():
-    scenario = load_scenarios(Path("scenarios"), "conflicting_evidence")[0]
+    scenario = load_scenarios(Path("tests/fixtures/milestone3"), "conflicting_evidence")[0]
     answer = Answer(
         claims=[
             Claim(value=v, source_ids=["report"], verified=True)

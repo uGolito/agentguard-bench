@@ -95,7 +95,7 @@ def sdk_factory():
 
 
 def scenarios():
-    return load_scenarios(Path("scenarios"), "prompt_injection")
+    return load_scenarios(Path("tests/fixtures/milestone3"), "prompt_injection")
 
 
 def test_real_sdk_multistep_wire_format(sdk_factory, tmp_path):

@@ -10,7 +10,7 @@ The only supported live model is `claude-haiku-4-5-20251001`. The [official mode
 
 Before every SDK request attempt, including retries, a shared thread-safe ledger checks the request cap and reserves:
 
-`1.25 × (200000 × $2 + max_output_tokens × $5) / 1000000`
+`1.25 Ã— (200000 Ã— $2 + max_output_tokens Ã— $5) / 1000000`
 
 This reserves the model's entire context at the highest supported input/cache-write rate, maximum output, plus a 25% margin. It avoids unproven byte/token heuristics and makes no token-counting API calls. At 512 output tokens the reservation is **$0.5032 per attempt**. Even a tiny request requires that much headroom. This intentionally favors stopping early over using the entire nominal budget.
 
@@ -35,12 +35,12 @@ The audit identified missing synchronization, replayable amount-only settlement 
 
 Provider accounting now uses per-token charges, avoiding incorrect global balance deltas when separate providers settle concurrently. Every retry reserves independently. SDK errors retain unknown charges; unexpected exceptions halt further calls and retain the token. Cancellation/interrupts retain before propagating. Known valid usage still settles when answer parsing fails, because malformed model content does not imply unknown billing. A model mismatch never refunds using the requested model's price. Concurrent tests cover overspend races, request caps and duplicate refunds; mocked SDK tests cover retries, exceptions, mismatch and per-provider totals.
 
-The guard/reviewer interface does not itself authorize spending. Shipped reviewers are fake and cost zero. Usage/cost fields on custom review decisions are self-reported instrumentation, not billing enforcement. A future paid reviewer must first integrate with this shared ledger and explicit opt-in boundary, including unknown-bill retention on timeout/cancellation. No paid reviewer implementation or call is included in this milestone.
+## Milestone 4A shared reviewer accounting
 
-## First small live evaluation (proposed only)
+The real Anthropic reviewer and primary provider use the same budget per mode. Every reviewer attempt reserves with its own output limit (256 by default, $0.5016 reservation); primary 512-token attempts reserve $0.5032. Concurrent callers cannot reuse headroom or settle a token twice. Injected shared ledgers must match the recorded cap/request/primary reservation configuration. Retry, timeout, exception and cancellation paths retain unknown bills; known usage settles even when the review verdict is invalid. Per-review accounting derives from attempt snapshots and records failed attempts, not only successful decisions.
 
-Assume three scenarios, one trial each, two requests per scenario, 2,000 input tokens per request and at most 512 output tokens. Six requests would cost approximately:
+Paired experiments keep a separate identical cap for each mode across all episodes. The declared total cap must cover their sum; C shares its mode cap between agent and reviewer. This can stop C earlier than A/B and is an explicit experimental limitation. Budgets are sequential per runtime and thread-safe across separate callers, not cross-process/account-wide quotas. Fake reviewers cost zero; arbitrary custom reviewer instrumentation does not enforce spending.
 
-`6 × (2000 × $1 + 512 × $5) / 1000000 = $0.02736`
+## First live plan — proposed only
 
-This is about **$0.03 before taxes**, with no retries, caching or extra steps. Actual usage is unmeasured. A proposed invocation would cap attempts at six, output at 512 and estimated spending at $1. It needs $0.5032 headroom for each attempt and may stop early after unknown-billing errors. For the whole six-attempt plan, reserving every attempt without refund would be $3.0192; a $1 cap deliberately does not permit that worst case. No such paid invocation is authorized by or executed during this milestone.
+See first_live_experiment.md for a six-case, two-trial A/B plan with optional C. Planning assumptions yield about 56 primary requests A/B and 88 primary/reviewer requests A/B/C. At 2,000 input/512 output per primary call and 500 input/256 output per review, estimates are approximately $0.26 and $0.40 before taxes. Actual usage is unmeasured. Conservative estimated caps are $1 per mode: $2 A/B or $3 A/B/C, 40 attempts per mode, zero retries. Unknown-bill reservations can stop early. These are not invoice guarantees, approval or experimental findings. Recheck current rates before any separately authorized live evaluation.

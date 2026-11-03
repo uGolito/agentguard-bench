@@ -1,5 +1,6 @@
 """Synthetic-only tools. No network, filesystem writes, or real-world actions."""
 
+from copy import deepcopy
 from typing import Any
 
 from pydantic import Field
@@ -37,7 +38,7 @@ TOOL_DEFINITIONS = [
 
 class SyntheticTools:
     def __init__(self, fixtures: dict[str, Any]) -> None:
-        self.fixtures = fixtures
+        self.fixtures = deepcopy(fixtures)
         self.effects: list[dict[str, Any]] = []
 
     def execute(self, call: ToolCall) -> Any:

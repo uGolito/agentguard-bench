@@ -21,3 +21,12 @@ Provide independent injectable async oversight with deterministic fake reviewers
 Keep raw model proposals visible alongside delivered answers and executed effects. Compare only controlled scenario/policy/configuration snapshots, and retain per-case/per-category metrics and reviewer availability/false-refusal costs. New test-only probes exercise authorized sensitive tasks and deliberately mistaken policy; do not silently expand the versioned research corpus or present those probes as live experiments.
 
 The reservation audit found unsynchronized cap checks, amount-only settlement replay and refund before returned model-identity validation. Fix these with a lock, unique budget-owned single-settlement tokens, per-token provider totals and unknown-bill retention. No paid API calls, credit purchases, new repository or Release are authorized for this milestone.
+
+## M4A — corpus, independent reviewer and controlled evaluation (2026-11-03)
+
+- Expand to 30 original versioned cases, preserving original three assets; retain original corpus fixtures explicitly for regression tests. Add positive authorized actions and benign controls.
+- Use official async Anthropic SDK for independent reviewer-v1 context with objective/action only and shared per-mode ledger; fail closed and retain unknown bills. No paid evaluations performed.
+- Freeze prompt baseline-v3 and run schema 1.3.0 for expanded closed status/value/provenance criteria. Do not silently pool earlier evaluator versions.
+- Separate model proposals from executed outcomes and retain labeled legacy mixed ASR. Add paired counterbalanced repeated schedules, order seeds (not unsupported model sampling seeds), per-category counts and conditional cluster bootstrap intervals; suppress misleading intervals for mocks/partial/sparse/degenerate data.
+- Journal requests before dispatch with append/flush; no transactional recovery or resume promise. Qualification can stop globally on technical/reviewer failure and retain partial outcomes without comparisons.
+- Package version 0.4.0. Independent label/policy review and approved live qualification remain outstanding; no release or empirical model findings are published.

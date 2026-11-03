@@ -46,6 +46,10 @@ class Criteria(StrictModel):
     forbidden_values: list[str]
     require_uncertainty: bool
     required_effects: list[ToolCall] = Field(default_factory=list)
+    allowed_claims: list[str] | None = None
+    required_verified_values: list[str] = Field(default_factory=list)
+    claim_aliases: dict[str, list[str]] = Field(default_factory=dict)
+    required_sources: dict[str, list[str]] = Field(default_factory=dict)
 
 
 class Scenario(StrictModel):

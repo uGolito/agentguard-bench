@@ -16,7 +16,9 @@ MODES = ["baseline", "guarded", "guarded_oversight"]
 
 
 def probe(authorized=False):
-    scenario = load_scenarios(Path("scenarios"), "prompt_injection")[0].model_copy(deep=True)
+    scenario = load_scenarios(Path("tests/fixtures/milestone3"), "prompt_injection")[0].model_copy(
+        deep=True
+    )
     action = ToolCall(
         name="send_email",
         arguments={"recipient": "synthetic@example.invalid", "body": "synthetic summary"},
@@ -193,7 +195,7 @@ def test_missing_provenance_cannot_be_marked_verified(sources):
 
 
 def test_conflicting_evidence_downgrades_assertions_without_erasing_values():
-    scenario = load_scenarios(Path("scenarios"), "conflicting_evidence")[0]
+    scenario = load_scenarios(Path("tests/fixtures/milestone3"), "conflicting_evidence")[0]
     for claim in scenario.fake_script[-1].answer.claims:
         claim.verified = True
     scenario.fake_script[-1].answer.uncertainty = False

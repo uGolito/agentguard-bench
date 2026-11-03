@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from agentguard.reporting.statistics import intervals
+
 
 def aggregate(run: dict[str, Any]) -> dict[str, dict[str, Any]]:
     rows = run["results"]
@@ -35,6 +37,20 @@ def aggregate(run: dict[str, Any]) -> dict[str, dict[str, Any]]:
             sum(e.get("reviewer_unauthorized_denominator", 0) for e in evaluations),
         ),
     }
+    for label, field in (
+        ("model_attack_success_rate", "model_attack_success"),
+        ("runtime_attack_success_rate", "runtime_attack_success"),
+    ):
+        eligible = [e[field] for e in evaluations if e.get(field) is not None]
+        pairs[label] = (sum(eligible), len(eligible))
+    pairs["unsafe_proposal_episode_rate"] = (
+        sum(e.get("proposed_unsafe_actions", 0) > 0 for e in evaluations),
+        len(rows),
+    )
+    pairs["delivered_wrong_claim_rate"] = (
+        sum(e.get("delivered_wrong_claims", False) for e in evaluations),
+        len(rows),
+    )
     return {
         name: {"numerator": n, "denominator": d, "rate": n / d if d else None}
         for name, (n, d) in pairs.items()
@@ -51,15 +67,21 @@ def resources(run: dict[str, Any]) -> dict[str, Any]:
         "reviewer_attempts": len(reviews),
         "reviewer_calls": sum(r.get("invoked", True) for r in reviews),
         "reviewer_unknown_usage_calls": sum(
-            r.get("invoked", True) and r["decision"] is None for r in reviews
+            r["accounting"]["unknown_billing_attempts"]
+            if "accounting" in r
+            else (r.get("invoked", True) and r["decision"] is None)
+            for r in reviews
         ),
+        "reviewer_api_requests": sum(r.get("accounting", {}).get("requests", 0) for r in reviews),
         "reviewer_failures": sum(r["decision"] is None for r in reviews),
-        "reviewer_input_tokens": sum((r["decision"] or {}).get("input_tokens", 0) for r in reviews),
+        "reviewer_input_tokens": sum(
+            r.get("accounting", r["decision"] or {}).get("input_tokens", 0) for r in reviews
+        ),
         "reviewer_output_tokens": sum(
-            (r["decision"] or {}).get("output_tokens", 0) for r in reviews
+            r.get("accounting", r["decision"] or {}).get("output_tokens", 0) for r in reviews
         ),
         "reviewer_estimated_cost_usd": sum(
-            (r["decision"] or {}).get("estimated_cost_usd", 0) for r in reviews
+            r.get("accounting", r["decision"] or {}).get("estimated_cost_usd", 0) for r in reviews
         ),
         "primary_estimated_cost_usd": sum(e["estimated_cost_usd"] for e in executions),
         "blocked_actions": sum(len(e.get("blocked_actions", [])) for e in executions),
@@ -68,16 +90,25 @@ def resources(run: dict[str, Any]) -> dict[str, Any]:
 
 def compare_runs(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
     """Reject uncontrolled comparisons, then report paired outcomes without causal claims."""
+    if (
+        baseline.get("experiment_complete") is False
+        or candidate.get("experiment_complete") is False
+    ):
+        raise ValueError("Incompatible comparison: stopped/incomplete experiment")
     for key in ("schema_version", "policy_sha256", "package_version"):
         if baseline.get(key) != candidate.get(key):
             raise ValueError(f"Incompatible comparison: {key} differs")
     for key in ("name", "model", "sdk_version", "client_injected", "live"):
         if baseline["provider_metadata"].get(key) != candidate["provider_metadata"].get(key):
             raise ValueError(f"Incompatible comparison: provider metadata {key} differs")
-    left = {k: v for k, v in baseline["config"].items() if k != "mode"}
-    right = {k: v for k, v in candidate["config"].items() if k != "mode"}
+    left = {k: v for k, v in baseline["config"].items() if k not in ("mode", "reviewer_provider")}
+    right = {k: v for k, v in candidate["config"].items() if k not in ("mode", "reviewer_provider")}
     if left != right:
         raise ValueError("Incompatible comparison: model, generation parameters or budgets differ")
+    if baseline["config"]["mode"] == candidate["config"][
+        "mode"
+    ] == "guarded_oversight" and baseline.get("reviewer") != candidate.get("reviewer"):
+        raise ValueError("Incompatible comparison: same-mode reviewers differ")
 
     def indexed(run: dict[str, Any]) -> dict[tuple[str, int], dict[str, Any]]:
         rows = {(r["scenario_id"], r["trial"]): r for r in run["results"]}
@@ -92,6 +123,11 @@ def compare_runs(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[st
     resources_a, resources_b = resources(baseline), resources(candidate)
     return {
         "notice": "Paired infrastructure comparison; fake/mocked runs are not live model findings.",
+        "confidence_intervals": intervals(baseline, candidate),
+        "legacy_asr_warning": (
+            "attack_success_rate is a compatibility mixed endpoint; "
+            "use model/runtime endpoints separately"
+        ),
         "baseline": metrics_a,
         "candidate": metrics_b,
         "modes": [baseline["config"]["mode"], candidate["config"]["mode"]],
@@ -188,3 +224,19 @@ def write_run(run: dict[str, Any], output: Path, *, directory_prepared: bool = F
             writer.writerow({"metric": name, **value})
     with (output / "report.md").open("x", encoding="utf-8") as stream:
         stream.write(markdown(run))
+    with (output / "analysis.json").open("x", encoding="utf-8") as stream:
+        json.dump(
+            {
+                "metrics": aggregate(run),
+                "confidence_intervals": intervals(run),
+                "resources": resources(run),
+                "per_category": {
+                    category: aggregate(
+                        {"results": [r for r in run["results"] if r["category"] == category]}
+                    )
+                    for category in sorted({r["category"] for r in run["results"]})
+                },
+            },
+            stream,
+            indent=2,
+        )
