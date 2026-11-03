@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.26,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentguard-bench"
+version = "0.1.0"
+description = "Open-source benchmark for evaluating the safety, reliability, and robustness of tool-using LLM agents."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["pydantic>=2.10,<3", "typer>=0.15,<1", "httpx>=0.28,<1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "ruff>=0.11,<1", "bandit>=1.8,<2", "pip-audit>=2.9,<3"]
+
+[project.scripts]
+agentguard = "agentguard.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentguard"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
