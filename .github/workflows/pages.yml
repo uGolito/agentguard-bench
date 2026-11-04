@@ -1,0 +1,54 @@
+name: SIMULATED dashboard Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ''
+      ANTHROPIC_AUTH_TOKEN: ''
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r requirements-dev.lock
+      - run: python -m pip install --no-deps -e .
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pytest --cov=agentguard --cov-fail-under=85
+      - run: bandit -r src -s B101
+      - run: python scripts/check_secrets.py
+      - run: pip-audit --disable-pip --no-deps -r requirements-dev.lock
+      - run: agentguard demo --output results/pages-rebuild
+      - run: python scripts/verify_demo.py results/pages-rebuild site/data
+      - run: python -m pip install playwright==1.64.1
+      - run: python -m playwright install --with-deps chromium
+      - name: Browser verification of static dashboard
+        run: |
+          python -m http.server 8765 --bind 127.0.0.1 --directory site > /tmp/agentguard-site.log 2>&1 &
+          python scripts/check_dashboard.py --screenshots results/browser-preview
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy verified SIMULATED static site
+        id: deployment
+        uses: actions/deploy-pages@v4

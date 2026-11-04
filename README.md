@@ -2,11 +2,17 @@
 
 **AI Agent Safety, Reliability & Evaluation Benchmark**
 
+[![Offline checks](https://github.com/uGolito/agentguard-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/uGolito/agentguard-bench/actions/workflows/ci.yml)
+
+[SIMULATED dashboard](https://ugolito.github.io/agentguard-bench/) · [Engineering case study](docs/engineering_case_study.md) · [Reproduce the demo](docs/demo.md)
+
+A model can propose an unauthorized action even when its runtime prevents execution. AgentGuard Bench makes that boundary observable while also checking whether legitimate tasks get completed. It combines a typed agent runtime, independent safeguards, bounded API accounting and explicit evaluation criteria.
+
 Open-source research infrastructure for evaluating the safety, reliability, and robustness of tool-using LLM agents. MIT licensed; no affiliation with or endorsement by any AI laboratory.
 
 ## Status and results
 
-**Milestone 4A: 30 versioned scenarios, independent Anthropic reviewer and paired repeated evaluation infrastructure implemented offline.** No live LLM benchmark results have been published yet.
+**Milestone 4B: reproducible offline demonstration and static public dashboard, built on the Milestone 4A runtime and 30 frozen scenarios.** No live LLM benchmark results have been published yet.
 
 Fake-provider and mocked SDK outcomes test infrastructure, not model behavior or agent safety. No paid model calls have been executed for this milestone. All tools remain local simulations: no real emails or external mutations. Live model requests require a separate explicit opt-in and a positive budget. Passing tests does not establish safety.
 
@@ -33,6 +39,24 @@ flowchart LR
 ```
 
 The runtime owns message roles, step limits, and tool dispatch, including multiple tool calls per response. The adapter preserves Claude tool-use IDs and sends grouped tool results through the official SDK. It never uses an SDK automatic tool runner. A thread-safe ledger reserves spending before every SDK attempt, including retries, and settles each unique reservation at most once. Tools execute only synthetic in-memory effects. Provider-independent controls enforce exact permissions, typed outputs, runtime-origin evidence and optional review. The evaluator uses separate ground truth, never the runtime policy as its answer key. Baseline retains mandatory input interfaces and SDK/answer-format parsing without external safeguards.
+
+## Inspect the demonstration
+
+![SIMULATED dashboard: baseline, guarded and guarded plus fake oversight](docs/assets/dashboard-overview.png)
+
+The dashboard compares authored fake scripts across baseline, guarded and guarded + fake oversight. Reference scripts exercise legitimate completion; adversarial scripts expose proposed versus executed unauthorized actions, synthetic disclosure and conflicting evidence. A separate reviewer-denial diagnostic shows false refusals. Every outcome is labeled **SIMULATED**.
+
+The demo preserves unsuccessful cases: it does not force perfect task completion. It reuses the runner, safeguards, evaluator and reporting functions; only fake scripts are overlaid on copied scenarios. Frozen labels, hypotheses and expected outcomes remain unchanged. These scripts ignore tool content and cannot establish model robustness.
+
+[Full desktop screenshot](docs/assets/dashboard-desktop.png) · [Execution trace screenshot](docs/assets/dashboard-trace.png) · [Mobile screenshot](docs/assets/dashboard-mobile.png)
+
+```bash
+agentguard demo --output results/demo
+python scripts/verify_demo.py results/demo site/data
+python -m http.server 8765 --bind 127.0.0.1 --directory site
+```
+
+After installation, open http://127.0.0.1:8765/. The dashboard needs no API keys, backend, external assets or paid infrastructure. Five public artifacts reproduce byte-for-byte, including 183 projected executions and a SHA-256 manifest. Tokens, live latency and inferential intervals are not applicable to fake outcomes; API cost is exactly $0. See [demonstration methodology](docs/demo.md).
 
 ## Installation
 
@@ -130,13 +154,13 @@ bandit -r src -s B101
 pip-audit --disable-pip --no-deps -r requirements-dev.lock
 ```
 
-GitHub Actions runs offline tests and all three fake modes on Python 3.12 and 3.13 without API credentials. An autouse fixture blocks application socket connections and DNS; Windows asyncio's internal wake-up socket pair is constructed separately. Official SDK integration tests use an in-memory HTTP transport. Dependency installation and vulnerability auditing require internet access; there are no paid model calls. Docker support remains a convenience recipe; see the validation record for whether it was executed.
+GitHub Actions runs offline tests and all three fake modes on Python 3.12 and 3.13 without API credentials. The Pages workflow additionally regenerates/compares the public assets, verifies desktop/mobile interactions in Chromium, and deploys only the static site after validation. An autouse fixture blocks application socket connections and DNS; Windows asyncio's internal wake-up socket pair is constructed separately. Official SDK integration tests use an in-memory HTTP transport. Dependency installation and vulnerability auditing require internet access; there are no paid model calls. Docker support remains a convenience recipe; see the validation record for whether it was executed.
 
 ## Known limitations and roadmap
 
 Thirty authored scenarios are a convenience corpus, not a representative deployment-risk distribution. Scripts ignore message content; SDK mocks do not qualify service availability or model behavior. Closed exact-value/provenance criteria and status aliases can reject correct paraphrases or miss unsupported prose. Evidence support is not truth. Same-model separate reviewer contexts do not ensure independent errors. Cost limits are estimates, not invoice guarantees, and are process-local. See [limitations](docs/limitations.md) and [integrity audit](docs/integrity_audit.md).
 
-Milestones 1–3 established the runtime, SDK and safeguards. Milestone 4A adds the full initial corpus, independent real reviewer adapter, paired scheduling, repeated trials, statistics and streaming journals. Remaining: independent label review, approved service qualification, powered live experiments, control ablations, expanded container validation and research publication. A GitHub Release requires separate approval.
+Milestones 1–3 established the runtime, SDK and safeguards. Milestone 4A adds the full initial corpus, independent real reviewer adapter, paired scheduling, repeated trials, statistics and streaming journals. Milestone 4B adds the static portfolio demonstration, reproducible SIMULATED projections, screenshots and engineering case study. Remaining: independent label review, approved service qualification, powered live experiments, control ablations, expanded container validation and research publication. A GitHub Release requires separate approval.
 
 ## Contributing
 

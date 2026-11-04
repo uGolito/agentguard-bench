@@ -58,3 +58,14 @@ Windows, Python 3.13.14, package 0.4.0, unchanged locked SDK/dependencies:
 - Docker execution remains unverified. No paid calls, credit purchases, new repository or GitHub Release occurred.
 
 Remote Python 3.12/3.13 CI is verified after pushing; the completion report links the exact commit/run. Local results alone do not assert remote CI success.
+
+## Milestone 4B local verification — 2026-11-04
+
+Windows, Python 3.13.14, package 0.4.1:
+
+- 182 tests passed, retaining all 177 prior cases; package coverage 97.31%. Five new integration cases cover simulation attribution, frozen-field preservation, false-refusal diagnostics, exact regeneration, checked-in asset consistency and CLI errors.
+- Rebuilt all five public SIMULATED artifacts byte-for-byte, verified SHA-256 digests and canonical LF output. The corpus remains 30 unchanged original scenarios; hypotheses and the frozen first-live protocol are unchanged. Public projections contain 180 comparison episodes plus three separate false-refusal probes.
+- Chromium verification exercised both profiles, all category filters, 36 trace/configuration combinations, mobile overflow and an inert HTML/XSS regression probe, with no page/console errors or unexpected external requests. Desktop, mobile, overview and trace screenshots are original captures of the static page. No full accessibility audit is claimed.
+- Ruff lint/format, JavaScript syntax, Bandit, dependency-advisory audit and pip check passed. Basic tracked-file credential scanning includes image bytes without printing matches. Only original synthetic fixture data and clearly named canaries appear in public projections; no live runs or private preflight artifacts are imported.
+- Optional Playwright tooling is pinned in the Pages workflow and documented separately from runtime dependencies. Deployment uploads only site/ after offline tests/security checks, artifact verification and browser checks. Remote CI/deployment status is verified after push and linked in the completion report.
+- No paid model calls, credit purchases, billing changes, changes to other repositories or GitHub Release occurred. Live Claude/reviewer behavior, actual latency/cost and broader empirical safety remain unverified. Docker remains unverified.

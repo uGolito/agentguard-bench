@@ -30,3 +30,7 @@ Baseline/guarded are mandatory; --with-oversight adds C. Mode order rotates with
 --dry-run constructs no clients, needs no credentials and makes zero requests. Live execution requires --allow-live, a positive cap, exact priced model and ANTHROPIC_API_KEY in the environment. CI blocks live clients. Never run paid commands without separate approval. See first_live_experiment.md for the complete proposed plan and cost_controls.md for estimates.
 
 run.json preserves configurations/episodes, traces.jsonl finalized events, journal.jsonl flushed events during execution, metrics.csv/analysis.json/report.md summaries. Paired roots add experiment.json and complete-design comparisons. Injection metadata distinguishes fake/mocked clients; it is not cryptographic provenance. Results are ignored by Git and never automatically published. Journals do not promise automatic recovery. Inspect partial data before proposing any retry.
+
+## Public SIMULATED demonstration
+
+`agentguard demo --output results/demo` builds the fixed 30-case corpus using fake providers only. It includes reference/adversarial script profiles across A/B/C plus a separate three-case false-refusal diagnostic. It has no provider, live-import or credential option. Output directories must be new. Run `python scripts/verify_demo.py results/demo site/data` to verify byte-for-byte reproduction and file hashes. See demo.md for static preview and artifact interpretation.

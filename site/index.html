@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A reproducible, explicitly simulated demonstration of tool-using agent safety controls. No live LLM findings.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>AgentGuard Bench · SIMULATED control demonstration</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to results</a>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="AgentGuard Bench home"><span class="mark" aria-hidden="true">[a]</span> AgentGuard <span class="muted">Bench</span></a>
+    <nav aria-label="Primary navigation"><a href="#results">Results</a><a href="#traces">Traces</a><a href="#methodology">Methodology</a><a href="https://github.com/uGolito/agentguard-bench">GitHub ↗</a></nav>
+  </header>
+  <main id="main">
+    <div class="notice"><strong>SIMULATED</strong><span>Deterministic fake providers. No live Claude findings. No API calls.</span></div>
+    <section class="hero" aria-labelledby="title">
+      <div><p class="eyebrow">RESEARCH ENGINEERING / OFFLINE DEMONSTRATION</p><h1 id="title">Where does an agent's<br>authority end?</h1><p class="intro">Inspect the boundary between a model's proposed action and what its runtime actually permits. Same synthetic tasks. Three configurations. Every decision traceable.</p></div>
+      <div class="hero-note"><span class="status-dot" aria-hidden="true"></span><strong>Reproduce locally</strong><code>agentguard demo --output results/demo</code><p>Python 3.12+ · 30 versioned scenarios<br>Six local tools · Zero external effects</p><a href="https://github.com/uGolito/agentguard-bench/blob/main/docs/demo.md">Setup and reproduction ↗</a></div>
+    </section>
+    <section class="coverage" aria-label="Scenario coverage">
+      <div><strong>30</strong><span>original synthetic scenarios</span></div><div><strong>10 / 10 / 10</strong><span>injection / tool manipulation / evidence</span></div><div><strong>16 + 14</strong><span>attack-present + benign cases</span></div><div><strong>3</strong><span>authorized sensitive-action controls</span></div>
+    </section>
+    <section id="results" aria-labelledby="results-title">
+      <div class="section-heading"><div><p class="eyebrow">01 / CONTROL COMPARISON</p><h2 id="results-title">SIMULATED outcomes</h2></div><div class="filters"><label>Script profile<select id="profile"><option value="adversarial">Adversarial probes</option><option value="reference">Reference completion</option></select></label><label>Scenario category<select id="category"><option value="all">All 30 scenarios</option><option value="prompt_injection">Prompt injection</option><option value="tool_manipulation">Tool manipulation</option><option value="conflicting_evidence">Conflicting evidence</option></select></label></div></div>
+      <p id="profile-description" class="explanation"></p>
+      <div class="configs" id="configs"></div>
+      <div class="table-wrap" tabindex="0" aria-label="Scrollable SIMULATED metric comparison"><table><caption>SIMULATED episode rates · raw numerator / eligible denominator</caption><thead><tr><th scope="col">Endpoint</th><th scope="col">A · Baseline</th><th scope="col">B · Guarded</th><th scope="col">C · Guarded + oversight</th></tr></thead><tbody id="metrics"></tbody></table></div>
+      <p class="footnote">Model ASR counts unsafe proposals or raw disclosure; runtime ASR counts delivered or executed failures. Benign cases are excluded from ASR. A blocked proposal does not establish model-level safety. Zero denominators are “not applicable”.</p>
+      <div class="resource-strip"><div><strong>$0</strong><span>API cost · fake providers</span></div><div><strong>Not applicable</strong><span>API tokens and live-model latency</span></div><div><strong>No interval</strong><span>Scripted outcomes are not statistical model evidence</span></div></div>
+      <aside class="diagnostic"><div><p class="eyebrow">SEPARATE DIAGNOSTIC / SIMULATED</p><h3>A reviewer can be wrong, too.</h3><p>A fake reviewer that denies every operation is tested on three authorized tasks. This diagnostic is separate from the three comparison arms.</p></div><div id="refusal-probe" class="diagnostic-value" aria-live="polite"></div></aside>
+    </section>
+    <section id="traces" aria-labelledby="traces-title">
+      <div class="section-heading"><div><p class="eyebrow">02 / EXECUTION EVIDENCE</p><h2 id="traces-title">Read the decision trail.</h2></div><div class="filters"><label>Scenario<select id="scenario"></select></label><label>Configuration<select id="mode"><option value="baseline">A · Baseline</option><option value="guarded" selected>B · Guarded</option><option value="guarded_oversight">C · Guarded + oversight</option></select></label></div></div>
+      <div class="trace-layout"><aside class="trace-summary"><span class="tag">SIMULATED TRACE</span><h3 id="trace-id"></h3><p id="trace-objective"></p><dl id="trace-outcome"></dl><p class="footnote">Rendered as inert text. Embedded attack instructions have no authority on this page.</p></aside><div id="timeline" class="timeline" aria-live="polite"></div></div>
+    </section>
+    <section id="methodology" class="methodology" aria-labelledby="methodology-title">
+      <div><p class="eyebrow">03 / INTERPRETATION</p><h2 id="methodology-title">What this establishes.</h2><p>This demo exercises deterministic authorization, typed validation, evidence annotations, reviewer integration and evaluation plumbing. The fake provider ignores tool content: its behavior is authored, not an observed response to an attack.</p><p>The adversarial profile overlays only fake scripts. Objectives, fixtures, labels and criteria remain frozen. Within each profile all three modes use identical scenario snapshots, policy, step limits and seeded scheduling. Reference and adversarial profiles are not a controlled empirical model comparison.</p><p>Public projections omit volatile UUIDs, timestamps, Python versions and local timing for byte reproducibility. Real experimental runs retain them. Full projected executions are downloadable.</p><a href="https://github.com/uGolito/agentguard-bench/blob/main/docs/engineering_case_study.md">Read the engineering case study ↗</a></div>
+      <div class="limitations"><h3>Limits that matter</h3><ul><li>No live model or real reviewer performance has been measured.</li><li>Thirty authored cases are a convenience corpus, not deployment-risk estimates.</li><li>Exact claims and citations are narrow rubrics, not semantic truth verification.</li><li>Confidence intervals are suppressed for fake results. Live cluster intervals require eligible data.</li><li>Local timing is omitted; it cannot estimate model latency or safeguard cost.</li><li>Real qualification still requires credentials, account/model verification and explicit paid approval.</li></ul><p><a href="https://github.com/uGolito/agentguard-bench/blob/main/docs/first_live_experiment.md">Proposed first live A/B plan: $2 estimated cap ↗</a></p></div>
+    </section>
+    <section class="downloads" aria-label="Download reproducible simulated artifacts"><h3>Inspect the artifacts <span class="tag">SIMULATED</span></h3><a href="data/demo.json" download>Structured results</a><a href="data/traces.jsonl" download>Full projected executions</a><a href="data/metrics.csv" download>Metric counts · CSV</a><a href="data/report.md" download>Markdown report</a><a href="data/manifest.json" download>SHA-256 manifest</a></section>
+    <p id="load-status" role="status">Loading local SIMULATED artifacts…</p>
+    <noscript><p>JavaScript is required for interactive comparisons. All SIMULATED artifacts remain available through the download links above.</p></noscript>
+  </main>
+  <footer><span>AgentGuard Bench · MIT · Original synthetic data</span><span>Independent project. No laboratory affiliation or endorsement.</span></footer>
+</body>
+</html>

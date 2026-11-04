@@ -28,7 +28,7 @@ def main() -> int:
     findings = []
     for name in filter(None, files):
         path = Path(name)
-        content = path.read_text(encoding="utf-8-sig")
+        content = path.read_bytes().decode("utf-8-sig", errors="replace")
         for number, line in enumerate(content.splitlines(), 1):
             if any(pattern.search(line) for pattern in PATTERNS):
                 findings.append(f"{name}:{number}")

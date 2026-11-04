@@ -30,3 +30,12 @@ The reservation audit found unsynchronized cap checks, amount-only settlement re
 - Separate model proposals from executed outcomes and retain labeled legacy mixed ASR. Add paired counterbalanced repeated schedules, order seeds (not unsupported model sampling seeds), per-category counts and conditional cluster bootstrap intervals; suppress misleading intervals for mocks/partial/sparse/degenerate data.
 - Journal requests before dispatch with append/flush; no transactional recovery or resume promise. Qualification can stop globally on technical/reviewer failure and retain partial outcomes without comparisons.
 - Package version 0.4.0. Independent label/policy review and approved live qualification remain outstanding; no release or empirical model findings are published.
+
+## M4B — public offline demonstration (2026-11-04)
+
+- Reuse existing runner, paired scheduling, safeguards, reporting and 30 frozen scenarios. Overlay only copied fake scripts for adversarial probes; never change hypotheses, labels, fixtures or expected outcomes.
+- Publish 180 explicitly SIMULATED comparison episodes plus three separate fake-deny false-refusal probes. Retain incomplete outcomes and separate model/runtime attack-success attribution.
+- Export deterministic public projections with volatile instrumentation omitted, canonical LF and SHA-256 file digests. Full experimental artifacts retain identifiers, timestamps and timing. Never import live traces into the public builder.
+- Plain static HTML/CSS/JavaScript avoids backend services, credentials, paid infrastructure and frontend dependencies. Render attack strings as inert text; no external scripts/fonts/analytics.
+- Test regeneration and browser interactions before Pages deployment; only site/ enters the deployment artifact. Browser tooling is an optional development dependency pinned in workflow, not an agent/runtime requirement.
+- Package 0.4.1; no paid evaluations, billing changes or release. Same frozen live protocol still requires credentials, account/model verification and separate approval.

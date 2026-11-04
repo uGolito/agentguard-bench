@@ -22,6 +22,18 @@ app = typer.Typer(no_args_is_help=True)
 ScenarioPath = Annotated[Path, typer.Option("--scenarios")]
 
 
+@app.command("demo")
+def demo(output: Path = Path("results/demo")) -> None:
+    """Build a SIMULATED public projection from the fixed offline corpus; never calls APIs."""
+    from agentguard.demo import build_demo
+
+    try:
+        build_demo(Path.cwd(), output)
+        typer.echo(f"SIMULATED offline demonstration: {output / 'demo.json'}")
+    except (ValueError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
 @app.command("list-scenarios")
 def list_scenarios(scenarios: ScenarioPath = Path("scenarios")) -> None:
     """List validated scenario IDs and categories."""
