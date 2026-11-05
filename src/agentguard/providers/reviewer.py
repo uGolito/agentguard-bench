@@ -8,13 +8,13 @@ from time import perf_counter
 from typing import Any
 
 import anthropic
-import httpx2
 from pydantic import Field
 
 from agentguard.config import RunConfig
 from agentguard.guards.oversight import ReviewDecision, ReviewRequest
 from agentguard.providers import ProviderError
 from agentguard.providers.budget import TOKEN_FIELDS, Budget
+from agentguard.providers.http import async_http_client, http_mode
 from agentguard.schemas import StrictModel
 
 
@@ -47,9 +47,7 @@ def create_review_client(config: RunConfig) -> anthropic.AsyncAnthropic:
         max_retries=0,
         timeout=config.timeout_seconds,
         _strict_response_validation=True,
-        http_client=httpx2.AsyncClient(
-            timeout=config.timeout_seconds, follow_redirects=False, trust_env=False
-        ),
+        http_client=async_http_client(config.timeout_seconds),
     )
 
 
@@ -93,6 +91,7 @@ class AnthropicReviewer:
             "sdk_retries": 0,
             "client_injected": self.injected,
             "shared_budget": True,
+            "http_mode": "injected" if self.injected else http_mode(),
         }
 
     async def review(self, request: ReviewRequest) -> ReviewDecision:

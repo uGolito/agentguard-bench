@@ -12,7 +12,7 @@ Open-source research infrastructure for evaluating the safety, reliability, and 
 
 ## Status and results
 
-**Milestone 4B: reproducible offline demonstration and static public dashboard, built on the Milestone 4A runtime and 30 frozen scenarios.** No live LLM benchmark results have been published yet.
+**Milestone 4C: explicit Codex Cloud proxy/CA compatibility, alongside the reproducible SIMULATED dashboard and 30 frozen scenarios.** No live LLM benchmark results have been published yet.
 
 Fake-provider and mocked SDK outcomes test infrastructure, not model behavior or agent safety. No paid model calls have been executed for this milestone. All tools remain local simulations: no real emails or external mutations. Live model requests require a separate explicit opt-in and a positive budget. Passing tests does not establish safety.
 
@@ -121,6 +121,12 @@ agentguard paired-run --policy examples/policy.json --with-oversight --reviewer 
 Mode order rotates within each scenario/trial; scenarios are seeded and episode state is isolated. Per-mode caps span all trials, including primary and reviewer requests. `--scenario-id` selects explicit cases. `--order-seed` controls scheduling, not model sampling; unsupported Anthropic model seeds are rejected.
 
 The [first live plan](docs/first_live_experiment.md) proposes six cases, two trials, A/B and optional real C. Estimated spending caps are $2 for A/B or $3 including C, subject to [cost-estimator limitations](docs/cost_controls.md). Exact previews/commands, stop conditions, expected artifacts and rollback procedures are documented. This plan is not authorization to execute paid calls.
+
+## Codex Cloud transport
+
+For a reviewed Codex Cloud runtime, set the non-secret `AGENTGUARD_HTTP_MODE=codex-cloud` and preserve its injected HTTPS proxy, CA trust and API-key placeholder. Both SDK clients then use the explicit runtime proxy with TLS verification and no direct fallback, including when NO_PROXY is set. Default local behavior remains `trust_env=False`; live opt-in, budgets, retries and CI restrictions are unchanged.
+
+The pinned SDK emits `Authorization: Bearer ...`; cloud secret bindings must match this header. Do not print secrets or disable TLS. [Cloud setup and security implications](docs/cloud_setup.md) describe required readiness checks and the separately authorized one-request smoke test. Offline compatibility tests do not establish actual cloud/account readiness. No Anthropic API request was made for this patch.
 
 ## Scenario examples
 

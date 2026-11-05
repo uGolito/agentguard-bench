@@ -39,3 +39,10 @@ The reservation audit found unsynchronized cap checks, amount-only settlement re
 - Plain static HTML/CSS/JavaScript avoids backend services, credentials, paid infrastructure and frontend dependencies. Render attack strings as inert text; no external scripts/fonts/analytics.
 - Test regeneration and browser interactions before Pages deployment; only site/ enters the deployment artifact. Browser tooling is an optional development dependency pinned in workflow, not an agent/runtime requirement.
 - Package 0.4.1; no paid evaluations, billing changes or release. Same frozen live protocol still requires credentials, account/model verification and separate approval.
+
+## M4C — explicit Codex Cloud transport (2026-11-05)
+
+- Preserve direct default trust_env=False. Add AGENTGUARD_HTTP_MODE=codex-cloud for both official SDK HTTP clients, requiring an explicit HTTPS_PROXY and honoring runtime CA trust with TLS/hostname verification enabled.
+- Set proxy explicitly so NO_PROXY cannot create a direct path; reject missing/invalid proxy setup without fallback. Keep fixed API endpoint, redirects off, CI/live gates, accounting and bounded retries unchanged.
+- Preserve SDK Bearer placeholder authentication for sidecar injection. Sanitize transport construction errors; record only mode in live metadata and reject uncontrolled mode differences in comparisons.
+- Package 0.4.2; no dependency changes, scenario/label/hypothesis changes or experimental result changes. Existing public SIMULATED assets remain byte-identical. Actual cloud binding/account readiness and paid smoke execution remain unverified and separately gated.

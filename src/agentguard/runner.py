@@ -17,6 +17,7 @@ from agentguard.guards.policy import Policy
 from agentguard.providers import FakeProvider
 from agentguard.providers.anthropic import AnthropicProvider, create_client
 from agentguard.providers.budget import PRICING, Budget
+from agentguard.providers.http import http_mode
 from agentguard.providers.reviewer import AnthropicReviewer
 from agentguard.schemas import Scenario
 from agentguard.tracing import EventLog, Sink
@@ -128,6 +129,7 @@ def run(
             "model": config.model,
             "sdk_retries": 0 if budget else None,
             "client_injected": client is not None and not owns_client,
+            **({"http_mode": http_mode() if owns_client else "injected"} if budget else {}),
         },
         "budget": budget.snapshot() if budget else None,
         "pricing": PRICING if budget else None,

@@ -6,12 +6,12 @@ from time import perf_counter, sleep
 from typing import Any
 
 import anthropic
-import httpx2
 from pydantic import ValidationError
 
 from agentguard.config import RunConfig
 from agentguard.providers import ProviderError, ProviderState
 from agentguard.providers.budget import TOKEN_FIELDS, Budget
+from agentguard.providers.http import sync_http_client
 from agentguard.schemas import Answer, ToolCall, Turn
 
 
@@ -30,9 +30,7 @@ def create_client(config: RunConfig) -> anthropic.Anthropic:
         max_retries=0,
         timeout=config.timeout_seconds,
         _strict_response_validation=True,
-        http_client=httpx2.Client(
-            timeout=config.timeout_seconds, follow_redirects=False, trust_env=False
-        ),
+        http_client=sync_http_client(config.timeout_seconds),
     )
 
 

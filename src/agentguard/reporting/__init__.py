@@ -98,7 +98,7 @@ def compare_runs(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[st
     for key in ("schema_version", "policy_sha256", "package_version"):
         if baseline.get(key) != candidate.get(key):
             raise ValueError(f"Incompatible comparison: {key} differs")
-    for key in ("name", "model", "sdk_version", "client_injected", "live"):
+    for key in ("name", "model", "sdk_version", "client_injected", "live", "http_mode"):
         if baseline["provider_metadata"].get(key) != candidate["provider_metadata"].get(key):
             raise ValueError(f"Incompatible comparison: provider metadata {key} differs")
     left = {k: v for k, v in baseline["config"].items() if k not in ("mode", "reviewer_provider")}

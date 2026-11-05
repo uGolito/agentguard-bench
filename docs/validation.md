@@ -69,3 +69,15 @@ Windows, Python 3.13.14, package 0.4.1:
 - Ruff lint/format, JavaScript syntax, Bandit, dependency-advisory audit and pip check passed. Basic tracked-file credential scanning includes image bytes without printing matches. Only original synthetic fixture data and clearly named canaries appear in public projections; no live runs or private preflight artifacts are imported.
 - Optional Playwright tooling is pinned in the Pages workflow and documented separately from runtime dependencies. Deployment uploads only site/ after offline tests/security checks, artifact verification and browser checks. Remote CI/deployment status is verified after push and linked in the completion report.
 - No paid model calls, credit purchases, billing changes, changes to other repositories or GitHub Release occurred. Live Claude/reviewer behavior, actual latency/cost and broader empirical safety remain unverified. Docker remains unverified.
+
+## Milestone 4C local verification — 2026-11-05
+
+Windows, Python 3.13.14, package 0.4.2, unchanged locked dependencies:
+
+- 205 offline tests passed (all prior 182 plus 23 cloud transport cases); package coverage 97.45%, new HTTP transport helper 100% line coverage. Socket/DNS blocking remains active.
+- Tests cover explicit proxy routing for sync/async clients despite NO_PROXY=*, default isolation, SSL_CERT_FILE/SSL_CERT_DIR trust loading and verified TLS flags, invalid proxy/CA configuration, sanitized constructor exceptions, fixed API endpoint, dummy-placeholder Bearer headers, no log/trace leakage, CI gates and comparison rejection for differing transport modes. Existing retry, request, budget, concurrency and refund tests pass.
+- Ruff lint/format, Bandit, pip check, dependency-advisory audit and tracked-file secret scan passed. No dependencies were added; editable installation succeeded.
+- Rebuilt all five public SIMULATED assets and verified byte identity/SHA-256 against site/data. Scenario JSON, frozen labels/hypotheses, the first-live protocol and experimental results are unchanged.
+- Cloud-mode dry-run of the one-request smoke plan made zero requests and confirmed a $0.5004 reservation within a $0.51 estimated cap. Dry-run does not establish proxy/CA/secret/account readiness.
+- The local executor is Windows, not the published cloud worker. Current cloud environment_status observations and real proxy/header-injection/account compatibility remain unverified; require ready secret/runtime bindings and enforced destination policy before a separately authorized live smoke test.
+- No Anthropic API requests, paid calls, credit purchases, billing changes or GitHub Release occurred. Remote Python 3.12/3.13 CI and Pages checks are verified after pushing and linked in the completion report.
