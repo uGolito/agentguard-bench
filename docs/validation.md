@@ -81,3 +81,15 @@ Windows, Python 3.13.14, package 0.4.2, unchanged locked dependencies:
 - Cloud-mode dry-run of the one-request smoke plan made zero requests and confirmed a $0.5004 reservation within a $0.51 estimated cap. Dry-run does not establish proxy/CA/secret/account readiness.
 - The local executor is Windows, not the published cloud worker. Current cloud environment_status observations and real proxy/header-injection/account compatibility remain unverified; require ready secret/runtime bindings and enforced destination policy before a separately authorized live smoke test.
 - No Anthropic API requests, paid calls, credit purchases, billing changes or GitHub Release occurred. Remote Python 3.12/3.13 CI and Pages checks are verified after pushing and linked in the completion report.
+
+## HTTP 400 diagnostics local verification — 2026-11-06
+
+Windows, Python 3.13.14, package 0.4.3; unchanged locked Anthropic SDK 2.4.0/dependencies:
+
+- 230 tests passed (all prior 205 plus 25 diagnostics/compatibility cases), package line coverage 97.60%, diagnostics helper 100%. Tests block application sockets/DNS and use dummy credentials/in-memory responses only.
+- Primary and reviewer HTTP 400 tests cover documented Anthropic error envelopes and proxy-shaped JSON/HTML, strict allowlisted fields, invalid categories/content types/request IDs, credential echo redaction, unknown origin, no retries, retained reservations and fail-closed review. Non-assistant HTTP-200 error envelopes no longer enter raw model traces. Application logging remains active while pinned raw dependency HTTP loggers are suppressed.
+- SDK source/type/wire tests verify version 2026-10-21, supported model literal, service_tier=standard_only, temperature=0 merged via extra_body, tool/message shapes and exactly one Bearer header. They do not establish remote acceptance or effective proxy credential substitution. The original 400 cause remains unresolved.
+- Ruff lint/format, Bandit, pip check, tracked-file credential scan and dependency-advisory audit passed. Editable installation succeeded. No dependencies were added or upgraded.
+- Frozen scenario files, hypotheses, first-live protocol, published SIMULATED results and dependency lock are unchanged against base 3d654118aac6fd2fe26a74005b411948a1dce9b0. Existing integration tests verify checked-in public artifact consistency; no standalone benchmark evaluation or Anthropic request was initiated.
+- Saved cloud metadata provides no header-substitution specification. Actual binding compatibility and origin of the operator-reported 400 remain unverified; do not infer them from a ready binding or allowed domain. No secret values, raw live traces or experimental findings were published.
+- No Anthropic calls, authentication probes, paid requests, retries of the earlier smoke, billing changes or GitHub Release occurred. Remote CI for the exact pushed commit is reported separately. A second diagnostic request still requires separate approval and cumulative accounting review.

@@ -11,6 +11,11 @@ from pydantic import ValidationError
 from agentguard.config import RunConfig
 from agentguard.providers import ProviderError, ProviderState
 from agentguard.providers.budget import TOKEN_FIELDS, Budget
+from agentguard.providers.diagnostics import (
+    assistant_envelope,
+    error_diagnostics,
+    suppress_raw_http_logs,
+)
 from agentguard.providers.http import sync_http_client
 from agentguard.schemas import Answer, ToolCall, Turn
 
@@ -67,6 +72,7 @@ class AnthropicProvider(ProviderState):
             raise ValueError("AnthropicProvider requires provider=anthropic")
         if not budget.matches(config):
             raise ValueError("Shared budget does not match the recorded configuration")
+        suppress_raw_http_logs()
         self.budget = budget
         # SDK 2.4 copy() does not inherit its strict-validation flag.
         # Reapply it explicitly; the wire tests cover this pinned SDK behavior.
@@ -123,12 +129,13 @@ class AnthropicProvider(ProviderState):
                             "status_code": status_code,
                             "latency_seconds": perf_counter() - started,
                             "billing": "unknown; full reservation retained",
+                            "diagnostics": error_diagnostics(exc),
                         },
                     }
                 )
                 if isinstance(exc, anthropic.APIResponseValidationError):
                     # Preserve malformed HTTP-200 model output, but never an auth/error body.
-                    if isinstance(exc.body, dict):
+                    if assistant_envelope(exc.body):
                         if isinstance(exc.body.get("usage"), dict):
                             self._observe_usage(exc.body["usage"])
                         self.events.append(

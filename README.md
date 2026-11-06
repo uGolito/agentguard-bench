@@ -12,7 +12,7 @@ Open-source research infrastructure for evaluating the safety, reliability, and 
 
 ## Status and results
 
-**Milestone 4C: explicit Codex Cloud proxy/CA compatibility, alongside the reproducible SIMULATED dashboard and 30 frozen scenarios.** No live LLM benchmark results have been published yet.
+**Milestone 4C plus safe HTTP-error diagnostics: explicit Codex Cloud proxy/CA compatibility, alongside the reproducible SIMULATED dashboard and 30 frozen scenarios.** No live LLM benchmark results have been published yet.
 
 Fake-provider and mocked SDK outcomes test infrastructure, not model behavior or agent safety. No paid model calls have been executed for this milestone. All tools remain local simulations: no real emails or external mutations. Live model requests require a separate explicit opt-in and a positive budget. Passing tests does not establish safety.
 
@@ -127,6 +127,8 @@ The [first live plan](docs/first_live_experiment.md) proposes six cases, two tri
 For a reviewed Codex Cloud runtime, set the non-secret `AGENTGUARD_HTTP_MODE=codex-cloud` and preserve its injected HTTPS proxy, CA trust and API-key placeholder. Both SDK clients then use the explicit runtime proxy with TLS verification and no direct fallback, including when NO_PROXY is set. Default local behavior remains `trust_env=False`; live opt-in, budgets, retries and CI restrictions are unchanged.
 
 The pinned SDK emits `Authorization: Bearer ...`; cloud secret bindings must match this header. Do not print secrets or disable TLS. [Cloud setup and security implications](docs/cloud_setup.md) describe required readiness checks and the separately authorized one-request smoke test. Offline compatibility tests do not establish actual cloud/account readiness. No Anthropic API request was made for this patch.
+
+The [HTTP 400 investigation](docs/http_400_investigation.md) documents a reported smoke failure and the unresolved remote cause. SDK errors now retain only allowlisted categories, validated request IDs, normalized content types and conservative response-shape evidence; raw HTTP error bodies/headers are excluded and dependency wire logging is suppressed. Valid request parameters and authentication were preserved. This diagnostic patch does not establish that the service compatibility issue is fixed.
 
 ## Scenario examples
 

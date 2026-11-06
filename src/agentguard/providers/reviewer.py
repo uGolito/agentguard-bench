@@ -14,6 +14,11 @@ from agentguard.config import RunConfig
 from agentguard.guards.oversight import ReviewDecision, ReviewRequest
 from agentguard.providers import ProviderError
 from agentguard.providers.budget import TOKEN_FIELDS, Budget
+from agentguard.providers.diagnostics import (
+    assistant_envelope,
+    error_diagnostics,
+    suppress_raw_http_logs,
+)
 from agentguard.providers.http import async_http_client, http_mode
 from agentguard.schemas import StrictModel
 
@@ -65,6 +70,7 @@ class AnthropicReviewer:
             raise ValueError("Anthropic reviewer must be explicitly selected")
         if not budget.matches(config):
             raise ValueError("Shared budget does not match the recorded configuration")
+        suppress_raw_http_logs()
         self.budget = budget
         self.client_factory = client_factory or (lambda: create_review_client(self.config))
         self.injected = client_factory is not None
@@ -150,11 +156,12 @@ class AnthropicReviewer:
                                 "data": {
                                     "type": type(exc).__name__,
                                     "status_code": getattr(exc, "status_code", None),
+                                    "diagnostics": error_diagnostics(exc),
                                 },
                             }
                         )
                         if isinstance(exc, anthropic.APIResponseValidationError):
-                            if isinstance(exc.body, dict):
+                            if assistant_envelope(exc.body):
                                 self.events.append(
                                     {
                                         "event": "reviewer_api_response",

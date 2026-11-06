@@ -46,3 +46,10 @@ The reservation audit found unsynchronized cap checks, amount-only settlement re
 - Set proxy explicitly so NO_PROXY cannot create a direct path; reject missing/invalid proxy setup without fallback. Keep fixed API endpoint, redirects off, CI/live gates, accounting and bounded retries unchanged.
 - Preserve SDK Bearer placeholder authentication for sidecar injection. Sanitize transport construction errors; record only mode in live metadata and reject uncontrolled mode differences in comparisons.
 - Package 0.4.2; no dependency changes, scenario/label/hypothesis changes or experimental result changes. Existing public SIMULATED assets remain byte-identical. Actual cloud binding/account readiness and paid smoke execution remain unverified and separately gated.
+
+## HTTP 400 diagnostic investigation (2026-11-06)
+
+- Preserve API version, model, temperature, service tier, Messages/tool schema and single Bearer authentication. Local SDK types/wire serialization are evidence of SDK behavior, not remote acceptance. No confirmed request-compatibility defect supports speculative changes.
+- Add shared bounded diagnostics for primary/reviewer errors: allowlisted category, syntactically validated/redacted request ID, normalized content type, response shape, HTTP status and unknown origin. No raw HTTP error body/header or exception message persists.
+- Suppress confirmed raw dependency header logging; keep application logs. Restrict existing malformed HTTP-200 model tracing to assistant envelopes, excluding non-model error bodies.
+- Package 0.4.3; unchanged proxy/TLS, request/retry/budget controls, frozen assets, dependency lock and published SIMULATED results. HTTP 400 remote cause remains unresolved; no Anthropic request or new experimental run is performed for this patch.
