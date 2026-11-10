@@ -41,8 +41,9 @@ local validation. Refusals, token limits, errors and malformed mocked replies re
 explicit handling. No repair requests or extra requests are introduced.
 
 The same option propagates through run and paired-run to A/B/C. It controls the
-primary answer only; the independent reviewer retains its existing ReviewDecision
-contract. Native mode is rejected for the fake provider to avoid misrepresenting
+primary answer only. Since 0.4.6 the Anthropic reviewer separately requests native
+JSON via anthropic-review-json-schema-v1 using its own allowed/reason Verdict.
+Its independent ReviewDecision contract and strict local validation are unchanged. Native mode is rejected for the fake provider to avoid misrepresenting
 scripted infrastructure as native decoding.
 
 Run configuration and provider metadata record output_protocol. Comparisons
@@ -68,3 +69,26 @@ compilation and additional system tokens may change latency and input usage, so
 historical smoke costs are not a measured forecast. Budget reservation still covers
 full context and output with conservative rates. Account availability and actual
 server acceptance remain unverified without a separately approved live test.
+
+
+## 0.4.6 reviewer correction
+
+The reviewer now sends output_config.format with anthropic.transform_schema(Verdict),
+not the primary Answer schema. The wire schema requires boolean allowed and string
+reason, forbids extra fields, and local validation still enforces 1..500 characters.
+SDK transformation moves unsupported length constraints into descriptions; it does
+not remove the original local checks. Strict JSON parsing still rejects Markdown,
+wrong types, empty/oversized reasons and extra fields. No repairs or fallback calls.
+
+The same documented native-output compatibility used for the primary applies to
+this simpler schema with pinned API 2023-06-01 and SDK 2.4.0. Offline wire tests
+confirm serialization, independence, fail-closed outcomes and settled usage. Actual
+live reviewer acceptance remains unverified by this patch. Reviewer metadata now
+records output_protocol=anthropic-review-json-schema-v1; same-mode comparisons
+reject different reviewer metadata, and the package-version compatibility check
+also prevents mixing 0.4.5 and 0.4.6 campaign arms.
+
+Do not resume, overwrite or reinterpret the interrupted native-abc-001 campaign.
+Retain it privately as an incomplete 0.4.5 experiment. A future 0.4.6 campaign needs
+separate paid authorization and a new output directory with all arms at one version.
+No private response, run ID or result is included in this documentation.

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.6
+
+- Request native JSON-schema output for the independent Anthropic reviewer using
+  the generic allowed/reason Verdict schema; record its versioned output protocol.
+- Keep the strict parser, local reason length/type/extra-field validation and
+  fail-closed handling. No Markdown stripping, repair calls or fallback.
+- Preserve reviewer independence, authorization policy, budget reservations,
+  request/retry limits, timeouts and primary output protocols.
+- Add offline wire and regression tests for fenced allow verdicts and malformed
+  decisions. Preserve private interrupted campaign data; no automatic resumption.
+- No paid calls or scenario/criterion changes; live acceptance remains unverified.
+
 ## 0.4.5
 
 - Add explicit opt-in anthropic-json-schema-v1 final-answer output via the

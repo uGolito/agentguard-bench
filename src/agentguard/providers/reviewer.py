@@ -96,6 +96,7 @@ class AnthropicReviewer:
             "max_tokens": self.config.reviewer_max_tokens,
             "temperature": 0.0,
             "prompt_version": "reviewer-v1",
+            "output_protocol": "anthropic-review-json-schema-v1",
             "sdk_retries": 0,
             "client_injected": self.injected,
             "shared_budget": True,
@@ -109,6 +110,9 @@ class AnthropicReviewer:
             "max_tokens": self.config.reviewer_max_tokens,
             "system": REVIEW_SYSTEM,
             "service_tier": "standard_only",
+            "output_config": {
+                "format": {"type": "json_schema", "schema": anthropic.transform_schema(Verdict)}
+            },
             "messages": [
                 {
                     "role": "user",

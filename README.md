@@ -184,3 +184,8 @@ on `run` and `paired-run`. The historical `prompt-json-v1` remains the default.
 See [offline compatibility evidence and protocol limits](docs/native_output_protocol.md).
 Different output protocols cannot be compared as controlled A/B runs. No live
 structured-output qualification has been performed.
+
+Version 0.4.6 also requests native JSON for the independent Anthropic reviewer,
+using its separate allowed/reason schema and recorded reviewer output protocol.
+Strict parsing, fail-closed decisions and budget controls remain unchanged.
+See the [reviewer correction](docs/native_output_protocol.md#046-reviewer-correction).

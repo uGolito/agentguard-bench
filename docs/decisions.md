@@ -73,3 +73,15 @@ The reservation audit found unsynchronized cap checks, amount-only settlement re
 - Compatibility is documented and tested through SDK 2.4.0 mocked wire requests
   with API 2023-06-01. Live server acceptance remains unverified for this protocol.
 - No paid calls, new benchmark findings, scenario changes or VPS changes.
+
+
+## 0.4.6 — independent reviewer native JSON output
+
+- Request the generic Verdict schema with native output_config.format on every
+  Anthropic review, independently of the primary response protocol. Record
+  anthropic-review-json-schema-v1 in reviewer metadata.
+- Retain the existing prompt, isolated context, trusted policy, strict Verdict
+  parser, local reason limits, fail-closed behavior and shared budget controls.
+- No Markdown recovery, retries beyond configured limits or automatic campaign
+  restart. Preserve interrupted private 0.4.5 artifacts and reject mixed-version
+  comparisons. Actual live reviewer acceptance is not established by offline tests.

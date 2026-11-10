@@ -10,7 +10,7 @@ from agentguard.config import RunConfig
 from agentguard.guards.oversight import ReviewRequest, review_action
 from agentguard.guards.policy import Policy
 from agentguard.providers.budget import MODEL, Budget
-from agentguard.providers.reviewer import AnthropicReviewer, create_review_client
+from agentguard.providers.reviewer import AnthropicReviewer, Verdict, create_review_client
 from agentguard.reporting import resources
 from agentguard.runner import load_scenarios, run
 
@@ -114,6 +114,16 @@ def test_independent_context_and_usage_come_from_sdk_not_model(factory):
     assert len(clients) == 2 and all(c.is_closed() for c in clients)
     for req in requests:
         payload = json.loads(req.content)
+        assert req.headers["anthropic-version"] == "2023-06-01"
+        assert payload["temperature"] == 0
+        assert payload["output_config"] == {
+            "format": {"type": "json_schema", "schema": anthropic.transform_schema(Verdict)}
+        }
+        schema = payload["output_config"]["format"]["schema"]
+        assert schema["additionalProperties"] is False
+        assert set(schema["required"]) == {"allowed", "reason"}
+        assert schema["properties"]["allowed"]["type"] == "boolean"
+        assert schema["properties"]["reason"]["type"] == "string"
         assert "tools" not in payload and len(payload["messages"]) == 1
         assert "independent safety reviewer" in payload["system"]
         assert "never" in payload["system"]
@@ -129,6 +139,10 @@ def test_independent_context_and_usage_come_from_sdk_not_model(factory):
     "raw",
     [
         response("not json"),
+        response('```json\n{"allowed":true,"reason":"Relevant scoped action"}\n```'),
+        response('{"allowed":true,"reason":""}'),
+        response(json.dumps({"allowed": True, "reason": "x" * 501})),
+        response('{"allowed":true}'),
         response('{"allowed":"yes","reason":"wrong type"}'),
         response('{"allowed":true,"reason":"fake usage","input_tokens":0}'),
         response(stop_reason="max_tokens"),
@@ -200,8 +214,9 @@ def test_no_review_when_shared_spending_headroom_exhausted(factory):
     assert not record["allowed"] and not requests and ledger.requests == 0
 
 
-def test_full_mocked_primary_and_real_review_adapter(factory):
-    scenario = next(s for s in load_scenarios(Path("scenarios")) if s.id == "pi-010")
+@pytest.mark.parametrize("scenario_id", ["pi-010", "ce-010"])
+def test_full_mocked_primary_and_real_review_adapter(factory, scenario_id):
+    scenario = next(s for s in load_scenarios(Path("scenarios")) if s.id == scenario_id)
     policy = Policy.model_validate_json(Path("examples/policy.json").read_text())
     action = scenario.authorized_calls[0]
     messages = iter(
@@ -249,6 +264,15 @@ def test_full_mocked_primary_and_real_review_adapter(factory):
         )
     finally:
         client.close()
+    from copy import deepcopy
+
+    from agentguard.reporting import compare_runs
+
+    assert result["reviewer"]["output_protocol"] == "anthropic-review-json-schema-v1"
+    previous = deepcopy(result)
+    del previous["reviewer"]["output_protocol"]
+    with pytest.raises(ValueError, match="same-mode reviewers differ"):
+        compare_runs(result, previous)
     assert result["results"][0]["evaluation"]["task_completed"]
     assert len(primary_requests) == 3 and len(review_requests) == 1
     assert result["budget"]["requests"] == 4
@@ -298,3 +322,22 @@ def test_mismatched_shared_ledger_is_rejected_before_client_construction(factory
     with pytest.raises(ValueError, match="Shared budget"):
         run(load_scenarios(Path("scenarios"))[:1], cfg, budget=ledger)
     assert not requests and not clients and ledger.requests == 0
+
+
+def test_fenced_allowed_verdict_remains_fail_closed_and_settles_usage(factory):
+    build, requests, _ = factory(
+        [response('```json\n{"allowed":true,"reason":"Relevant scoped action"}\n```')]
+    )
+    cfg = config(max_retries=0)
+    ledger = Budget(cfg)
+    reviewer = AnthropicReviewer(cfg, ledger, build)
+    record = review_action(reviewer, request(), 1.0)
+    assert not record["allowed"] and record["reason"] == "reviewer_error"
+    assert record["decision"] is None
+    assert len(requests) == 1
+    assert ledger.snapshot()["pending_attempts"] == 0
+    assert ledger.snapshot()["unknown_billing_attempts"] == 0
+    assert ledger.snapshot()["estimated_cost_usd"] == pytest.approx(0.0001)
+    assert record["accounting"]["estimated_cost_usd"] == pytest.approx(0.0001)
+    assert reviewer.metadata["output_protocol"] == "anthropic-review-json-schema-v1"
+    assert any(e["event"] == "reviewer_failure" for e in record["trace"])
