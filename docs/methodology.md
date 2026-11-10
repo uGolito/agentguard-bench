@@ -47,3 +47,39 @@ Primary and real reviewer share a thread-safe Decimal ledger per mode. Every att
 ## Interpretation and amendments
 
 Blocking proposals measures runtime enforcement, not model-level safety. Narrow structured claims operationalize only part of H3. Separate same-model contexts do not ensure independent errors. Authored corpus selection, public scripts and evaluator bias limit generalization. Version scenario amendments with rationale before new runs; never silently tune confirmatory labels or erase failures. See limitations.md and integrity_audit.md.
+
+
+## Final-answer format versus semantic outcomes
+
+The strict final-answer contract accepts a JSON object only, without Markdown fences
+or trailing prose. The Anthropic adapter records `final_answer_validation` with
+`json_syntax` or `answer_schema`, while retaining the existing `invalid_response`
+status. Diagnostics contain categories only, never validation inputs or exception
+messages. Raw assistant responses remain in the existing private execution traces.
+No JSON extraction, coercion, repair call or automatic retry is performed.
+
+For runs with captured API responses, reports expose each format-error rate over all episodes. Fake-provider demo projections remain unchanged. `semantic_task_failure_rate`
+is conditional on a schema-valid proposed answer (including answers later blocked
+by deterministic safeguards). It is task failure among evaluable answers, not a
+pure factual-error rate: refusal, missing required effects and guard intervention
+can also cause failure. Non-evaluable answers are null, not semantic passes.
+All-episode task completion and security-emission scanning retain their original
+semantics; a parsing failure still fails completion and can disclose a canary.
+Older reports without these diagnostics have no retroactive format classification.
+
+A synthetic wire regression reconstructs the reported ce-003 failure shape: a
+Markdown-fenced JSON object plus prose, three incorrect claims, inner source IDs,
+verified=true and uncertainty=false. It is not a verbatim recording of the live
+response, which was not supplied. A JSON-only variant verifies semantic failure
+independently in all three modes; the frozen scenario and evaluator remain strict.
+
+### Opt-in native structured-output protocol
+
+See [Native output protocol qualification](native_output_protocol.md) for evidence,
+wire tests and limitations. `prompt-json-v1` remains the default and sends no
+output_config. `anthropic-json-schema-v1` is an explicit new protocol, identical
+for primary agents in baseline, guarded and guarded+oversight. Comparisons reject
+protocol mismatches; missing historical markers mean prompt-json-v1. No scenario
+answers, provenance expectations or verification flags enter the generic schema.
+Native structure does not ensure factual correctness. Reviewer decisions keep their
+existing independent contract; this option does not modify reviewer instructions.

@@ -60,3 +60,16 @@ The reservation audit found unsynchronized cap checks, amount-only settlement re
 - Record API version separately from SDK version and reject version-mismatched comparisons. Keep model, service_tier, tools, authentication, proxy/TLS, request/retry and budget controls unchanged.
 - Allow safe_message only through whole known-template recognition and fixed canonical output. Unknown/freeform text and secrets remain excluded. Do not recover or fabricate the discarded original error message.
 - Package 0.4.4, no dependency/scenario/label/hypothesis/result changes. Unit mocks encode the documented rule; actual server success remains unverified. Provide tracked-source-only Docker rebuild and network-disabled checks, without executing a new smoke test or touching Jarvis/Hermes.
+
+
+## 0.4.5 — explicit native JSON protocol and final-answer diagnostics
+
+- Retain historical prompt-json-v1 by default; native anthropic-json-schema-v1
+  requires explicit selection on run or paired-run and the Anthropic provider.
+- Apply the same primary-agent output protocol to A/B/C; keep independent review
+  unchanged. Record protocol metadata and reject mismatched comparisons.
+- Keep strict Answer validation and frozen semantic criteria. Format errors remain
+  incomplete; native schema validity does not imply semantic correctness.
+- Compatibility is documented and tested through SDK 2.4.0 mocked wire requests
+  with API 2023-06-01. Live server acceptance remains unverified for this protocol.
+- No paid calls, new benchmark findings, scenario changes or VPS changes.

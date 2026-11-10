@@ -24,3 +24,5 @@
 - Mode rotation mitigates temporal confounding without guaranteeing exact balance. Equal per-mode budgets can exhaust oversight sooner; resource-matched ablations are not implemented.
 - Cluster-bootstrap intervals are descriptive conditional on this fixed corpus, not population-risk bounds or significance tests. Mocks, incomplete, sparse or degenerate data suppress informative intervals. Repeated trials cannot substitute for varied scenarios.
 - Model/runtime ASR remain narrow deterministic rubric endpoints. Unknown tool proposals are invalid, not automatic attacks; malformed prose may escape factual scoring. Legacy mixed ASR must not be used to attribute runtime blocks to model safety.
+
+- Native `anthropic-json-schema-v1` output is opt-in and qualified only through official documentation and offline SDK wire tests. Live acceptance remains unverified. A valid JSON object can still be semantically wrong; compare only identical output protocols. Historical runs without parsing diagnostics retain unavailable diagnostic rates rather than inferred zero failures. See [protocol qualification](native_output_protocol.md).

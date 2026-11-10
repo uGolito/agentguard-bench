@@ -452,3 +452,244 @@ def test_guarded_runtime_returns_validated_untrusted_data_to_sdk(sdk_factory):
     assert output["trust"] == "untrusted"
     assert output["fixture_key"] == "report"
     assert output["data"]["source_id"] == "report-a"
+
+
+@pytest.mark.parametrize("mode", ["baseline", "guarded", "guarded_oversight"])
+@pytest.mark.parametrize("form", ["markdown", "schema", "semantic", "valid"])
+@pytest.mark.parametrize("protocol", ["prompt-json-v1", "anthropic-json-schema-v1"])
+def test_ce003_final_contract_diagnostics(sdk_factory, mode, form, protocol):
+    """Synthetic reconstruction of the reported failure, not the unavailable verbatim trace."""
+    from agentguard.agents import execute
+    from agentguard.evaluators import evaluate
+    from agentguard.reporting import aggregate
+
+    scenario = next(s for s in load_scenarios(Path("scenarios")) if s.id == "ce-003")
+    result = {
+        "claims": [
+            {"value": "Eight items", "source_ids": ["elm-undated"], "verified": True},
+            {"value": "Nine items", "source_ids": ["elm-dated"], "verified": True},
+            {"value": "Latest stock is nine", "source_ids": ["elm-dated"], "verified": True},
+        ],
+        "uncertainty": False,
+        "refused": False,
+    }
+    if form == "valid":
+        result = scenario.fake_script[-1].answer.model_dump()
+    if form == "schema":
+        result["claims"][0]["verified"] = "true"
+    text = json.dumps(result)
+    if form == "markdown":
+        text = "```json\n" + text + "\n```\nSummary: inventory observations differ."
+    client, requests = sdk_factory(
+        [
+            message(
+                [tool_content()], "tool_use", usage={"input_tokens": 1406, "output_tokens": 40}
+            ),
+            message(
+                [{"type": "text", "text": text}], usage={"input_tokens": 1553, "output_tokens": 307}
+            ),
+        ]
+    )
+    config = live_config(
+        mode=mode, max_requests=4, max_tokens=512, max_retries=0, output_protocol=protocol
+    )
+    budget = Budget(config)
+    provider = AnthropicProvider(config, budget, client)
+    execution = execute(scenario, provider, config, 4, reviewer=None)
+    evaluation = evaluate(scenario, execution)
+    metrics = aggregate({"results": [{"execution": execution, "evaluation": evaluation}]})
+    assert len(requests) == 2
+    for request in requests:
+        body = json.loads(request.content)
+        assert request.headers["anthropic-version"] == "2023-06-01"
+        assert body["temperature"] == 0
+        assert len(body["tools"]) == 6
+        if protocol == "anthropic-json-schema-v1":
+            from agentguard.schemas import Answer
+
+            assert body["output_config"] == {
+                "format": {"type": "json_schema", "schema": anthropic.transform_schema(Answer)}
+            }
+            assert "required_values" not in json.dumps(body)
+        else:
+            assert "output_config" not in body
+    assert execution["tokens"]["input_tokens"] == 2959
+    assert execution["tokens"]["output_tokens"] == 347
+    assert execution["estimated_cost_usd"] == pytest.approx(0.004694)
+    assert not execution["effects"]
+    assert evaluation["task_completed"] is (form == "valid")
+    if form in ("markdown", "schema"):
+        category = "json_syntax" if form == "markdown" else "answer_schema"
+        assert execution["status"] == "invalid_response"
+        assert evaluation["final_answer_format_error"] == category
+        assert evaluation["semantic_task_failure"] is None
+        assert metrics["semantic_task_failure_rate"]["denominator"] == 0
+        assert metrics[f"{category}_error_rate"]["numerator"] == 1
+    else:
+        assert evaluation["final_answer_format_error"] is None
+        assert evaluation["semantic_task_failure"] is (form != "valid")
+        assert metrics["semantic_task_failure_rate"]["denominator"] == 1
+
+
+@pytest.mark.parametrize("protocol", ["prompt-json-v1", "anthropic-json-schema-v1"])
+def test_output_protocol_metadata_and_compatibility(sdk_factory, protocol):
+    from copy import deepcopy
+
+    from agentguard.reporting import compare_runs
+
+    client, _ = sdk_factory([message(answer_content())])
+    result = run(scenarios(), live_config(output_protocol=protocol), client=client)
+    assert result["provider_metadata"]["output_protocol"] == protocol
+    assert result["config"]["output_protocol"] == protocol
+    assert compare_runs(result, result)
+    different = deepcopy(result)
+    other = "anthropic-json-schema-v1" if protocol == "prompt-json-v1" else "prompt-json-v1"
+    different["config"]["output_protocol"] = other
+    different["provider_metadata"]["output_protocol"] = other
+    with pytest.raises(ValueError, match="output protocol"):
+        compare_runs(result, different)
+    different["provider_metadata"]["output_protocol"] = protocol
+    with pytest.raises(ValueError, match="inconsistent output protocol"):
+        compare_runs(result, different)
+    if protocol == "prompt-json-v1":
+        historical = deepcopy(result)
+        del historical["config"]["output_protocol"]
+        del historical["provider_metadata"]["output_protocol"]
+        assert compare_runs(result, historical)
+        for row in historical["results"]:
+            for key in (
+                "final_answer_format_error",
+                "semantic_answer_evaluable",
+                "semantic_task_failure",
+            ):
+                row["evaluation"].pop(key, None)
+        comparison = compare_runs(result, historical)
+        assert comparison["candidate"]["json_syntax_error_rate"]["rate"] is None
+        assert comparison["rate_differences"]["semantic_task_failure_rate"] is None
+        assert (
+            compare_runs(historical, result)["baseline"]["json_syntax_error_rate"]["rate"] is None
+        )
+
+
+def test_native_schema_rejection_does_not_fallback_or_retry(sdk_factory):
+    client, requests = sdk_factory(
+        [
+            (
+                400,
+                {
+                    "type": "error",
+                    "error": {"type": "invalid_request_error", "message": "synthetic rejection"},
+                },
+                {},
+            )
+        ]
+    )
+    result = run(
+        scenarios(), live_config(output_protocol="anthropic-json-schema-v1"), client=client
+    )
+    assert len(requests) == 1
+    assert result["results"][0]["execution"]["status"] == "provider_error"
+    assert result["budget"]["unknown_billing_attempts"] == 1
+    assert result["budget"]["conservative_charge_usd"] == pytest.approx(0.5032)
+
+
+def test_native_schema_request_limit_preserved(sdk_factory):
+    client, requests = sdk_factory([message([tool_content()], "tool_use")])
+    result = run(
+        scenarios(),
+        live_config(output_protocol="anthropic-json-schema-v1", max_requests=1),
+        client=client,
+    )
+    assert len(requests) == 1
+    assert result["results"][0]["execution"]["status"] == "request_limit"
+
+
+@pytest.mark.parametrize("command", ["run", "paired-run"])
+def test_native_protocol_cli_dry_run(command):
+    args = [
+        command,
+        "--provider",
+        "anthropic",
+        "--model",
+        MODEL,
+        "--output-protocol",
+        "anthropic-json-schema-v1",
+        "--max-cost",
+        "1",
+        "--dry-run",
+    ]
+    if command == "paired-run":
+        args += [
+            "--policy",
+            "examples/policy.json",
+            "--max-total-cost",
+            "3",
+            "--with-oversight",
+            "--reviewer",
+            "anthropic",
+        ]
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 0, result.output
+    assert "NO API CALLS" in result.output
+    assert "anthropic-json-schema-v1" in result.output
+
+
+def test_native_protocol_rejected_for_fake_provider():
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="requires provider=anthropic"):
+        RunConfig(output_protocol="anthropic-json-schema-v1")
+
+
+def test_native_protocol_paired_three_modes_share_wire_contract(sdk_factory):
+    from agentguard.experiments import run_paired
+    from agentguard.guards.policy import Policy
+    from agentguard.reporting import compare_runs
+
+    scenario = next(s for s in load_scenarios(Path("scenarios")) if s.id == "ce-003")
+    seen = []
+
+    def factory(mode, scenario_id, trial):
+        client, requests = sdk_factory(
+            [
+                message([tool_content()], "tool_use"),
+                message(
+                    [{"type": "text", "text": scenario.fake_script[-1].answer.model_dump_json()}]
+                ),
+            ]
+        )
+        seen.append(requests)
+        return client
+
+    experiment = run_paired(
+        [scenario],
+        live_config(output_protocol="anthropic-json-schema-v1"),
+        Policy(),
+        oversight=True,
+        client_factory=factory,
+        max_total_cost=15,
+    )
+    assert experiment["complete"]
+    assert len(seen) == 3
+    bodies = [json.loads(requests[0].content) for requests in seen]
+    assert bodies[0] == bodies[1] == bodies[2]
+    for result in experiment["runs"].values():
+        assert result["config"]["output_protocol"] == "anthropic-json-schema-v1"
+        assert result["provider_metadata"]["output_protocol"] == "anthropic-json-schema-v1"
+        assert result["results"][0]["evaluation"]["task_completed"]
+        assert compare_runs(experiment["runs"]["baseline"], result)
+
+
+@pytest.mark.parametrize("stop", ["max_tokens", "refusal"])
+def test_native_truncation_and_refusal_settle_usage(sdk_factory, stop):
+    client, requests = sdk_factory([message([{"type": "text", "text": "incomplete"}], stop)])
+    result = run(
+        scenarios(), live_config(output_protocol="anthropic-json-schema-v1"), client=client
+    )
+    execution = result["results"][0]["execution"]
+    assert len(requests) == 1
+    assert execution["status"] == ("output_limit" if stop == "max_tokens" else "completed")
+    assert not result["results"][0]["evaluation"]["task_completed"]
+    assert result["budget"]["unknown_billing_attempts"] == 0
+    assert result["budget"]["pending_attempts"] == 0
+    assert result["budget"]["conservative_charge_usd"] == pytest.approx(0.0002)

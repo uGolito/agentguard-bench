@@ -60,6 +60,7 @@ def run(
     max_cost: float = 0.0,
     trials: int = 1,
     max_tokens: int = 512,
+    output_protocol: str = "prompt-json-v1",
     temperature: float = 0.0,
     timeout: float = 30.0,
     max_retries: int = 0,
@@ -98,6 +99,7 @@ def run(
             max_cost=max_cost,
             trials=trials,
             max_tokens=max_tokens,
+            output_protocol=output_protocol,
             temperature=temperature,
             timeout_seconds=timeout,
             max_retries=max_retries,
@@ -129,7 +131,7 @@ def run(
                 typer.echo(
                     f"NO API CALLS: {len(selected)} scenarios x {trials} trials; "
                     f"reserve ${reservation:.6f}/attempt; cap ${max_cost}; "
-                    f"requests <= {max_requests}"
+                    f"requests <= {max_requests}; output protocol={config.output_protocol}"
                 )
             else:
                 typer.echo(f"Offline plan: {len(selected)} scenarios x {trials} trials; cost $0")
@@ -178,6 +180,7 @@ def paired_run(
     max_cost: float = 0.0,
     max_total_cost: float = 0.0,
     max_tokens: int = 512,
+    output_protocol: str = "prompt-json-v1",
     max_retries: int = 0,
     timeout: float = 30.0,
     reviewer_timeout: float = 30.0,
@@ -201,6 +204,7 @@ def paired_run(
             max_requests=max_requests,
             max_cost=max_cost,
             max_tokens=max_tokens,
+            output_protocol=output_protocol,
             max_retries=max_retries,
             timeout_seconds=timeout,
             reviewer_timeout_seconds=reviewer_timeout,
@@ -231,7 +235,8 @@ def paired_run(
         if dry_run:
             typer.echo(
                 f"NO API CALLS: {len(selected)} scenarios x {trials} trials x {modes} modes; "
-                f"requests <= {max_requests * modes}, estimated total cap ${max_total_cost}"
+                f"requests <= {max_requests * modes}, estimated total cap ${max_total_cost}; "
+                f"output protocol={config.output_protocol}"
             )
             return
         output.mkdir(parents=True, exist_ok=False)

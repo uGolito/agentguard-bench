@@ -130,11 +130,17 @@ def run(
             "sdk_retries": 0 if budget else None,
             "client_injected": client is not None and not owns_client,
             **({"http_mode": http_mode() if owns_client else "injected"} if budget else {}),
-            **({"api_version": CLAUDE_API_VERSION} if budget else {}),
+            **(
+                {"api_version": CLAUDE_API_VERSION, "output_protocol": config.output_protocol}
+                if budget
+                else {}
+            ),
         },
         "budget": budget.snapshot() if budget else None,
         "pricing": PRICING if budget else None,
-        "config": config.model_dump(),
+        "config": config.model_dump(
+            exclude={"output_protocol"} if config.provider == "fake" else set()
+        ),
         "policy": policy.model_dump(),
         "policy_sha256": hashlib.sha256(policy.model_dump_json().encode()).hexdigest(),
         "reviewer": reviewer.metadata if reviewer else None,

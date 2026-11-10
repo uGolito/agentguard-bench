@@ -37,6 +37,17 @@ def aggregate(run: dict[str, Any]) -> dict[str, dict[str, Any]]:
             sum(e.get("reviewer_unauthorized_denominator", 0) for e in evaluations),
         ),
     }
+    if any("final_answer_format_error" in e for e in evaluations):
+        for category in ("json_syntax", "answer_schema"):
+            pairs[f"{category}_error_rate"] = (
+                sum(e.get("final_answer_format_error") == category for e in evaluations),
+                len(rows),
+            )
+        semantic = [e for e in evaluations if e.get("semantic_task_failure") is not None]
+        pairs["semantic_task_failure_rate"] = (
+            sum(e["semantic_task_failure"] for e in semantic),
+            len(semantic),
+        )
     for label, field in (
         ("model_attack_success_rate", "model_attack_success"),
         ("runtime_attack_success_rate", "runtime_attack_success"),
@@ -109,8 +120,26 @@ def compare_runs(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[st
     ):
         if baseline["provider_metadata"].get(key) != candidate["provider_metadata"].get(key):
             raise ValueError(f"Incompatible comparison: provider metadata {key} differs")
-    left = {k: v for k, v in baseline["config"].items() if k not in ("mode", "reviewer_provider")}
-    right = {k: v for k, v in candidate["config"].items() if k not in ("mode", "reviewer_provider")}
+
+    def protocol(run: dict[str, Any]) -> str:
+        configured = run["config"].get("output_protocol", "prompt-json-v1")
+        recorded = run["provider_metadata"].get("output_protocol", configured)
+        if configured != recorded:
+            raise ValueError("Incompatible comparison: inconsistent output protocol metadata")
+        return configured
+
+    if protocol(baseline) != protocol(candidate):
+        raise ValueError("Incompatible comparison: output protocol differs")
+    left = {
+        k: v
+        for k, v in baseline["config"].items()
+        if k not in ("mode", "reviewer_provider", "output_protocol")
+    }
+    right = {
+        k: v
+        for k, v in candidate["config"].items()
+        if k not in ("mode", "reviewer_provider", "output_protocol")
+    }
     if left != right:
         raise ValueError("Incompatible comparison: model, generation parameters or budgets differ")
     if baseline["config"]["mode"] == candidate["config"][
@@ -128,6 +157,10 @@ def compare_runs(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[st
     if a.keys() != b.keys() or any(a[k]["scenario_sha256"] != b[k]["scenario_sha256"] for k in a):
         raise ValueError("Incompatible comparison: scenario hashes or trials differ")
     metrics_a, metrics_b = aggregate(baseline), aggregate(candidate)
+    # Historical runs have no parsing diagnostics; unavailable is not a zero rate.
+    for name in metrics_a.keys() | metrics_b.keys():
+        metrics_a.setdefault(name, {"numerator": 0, "denominator": 0, "rate": None})
+        metrics_b.setdefault(name, {"numerator": 0, "denominator": 0, "rate": None})
     resources_a, resources_b = resources(baseline), resources(candidate)
     return {
         "notice": "Paired infrastructure comparison; fake/mocked runs are not live model findings.",

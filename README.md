@@ -177,3 +177,10 @@ Open an issue describing the hypothesis, threat model, and acceptance criteria. 
 ## License
 
 Original code, scenarios and documentation: [MIT](LICENSE). Third-party dependencies retain their own licenses.
+
+
+Native JSON output is available as explicit opt-in `--output-protocol anthropic-json-schema-v1`
+on `run` and `paired-run`. The historical `prompt-json-v1` remains the default.
+See [offline compatibility evidence and protocol limits](docs/native_output_protocol.md).
+Different output protocols cannot be compared as controlled A/B runs. No live
+structured-output qualification has been performed.

@@ -100,6 +100,10 @@ class AnthropicProvider(ProviderState):
             "tools": messages[0]["tools"],
             "messages": translate_messages(messages),
         }
+        if self.config.output_protocol == "anthropic-json-schema-v1":
+            payload["output_config"] = {
+                "format": {"type": "json_schema", "schema": anthropic.transform_schema(Answer)}
+            }
         for attempt in range(self.config.max_retries + 1):
             reserved = self.budget.reserve()
             self.requests += 1
@@ -226,7 +230,14 @@ class AnthropicProvider(ProviderState):
                     self.estimated_cost_usd += float(charge)
             try:
                 return self._parse(raw)
-            except (ValidationError, ValueError, KeyError, TypeError):
+            except (ValidationError, ValueError, KeyError, TypeError) as exc:
+                if raw.get("stop_reason") == "end_turn":
+                    category = (
+                        "json_syntax" if isinstance(exc, json.JSONDecodeError) else "answer_schema"
+                    )
+                    self.events.append(
+                        {"event": "final_answer_validation", "data": {"category": category}}
+                    )
                 raise ProviderError("invalid_response") from None
         raise AssertionError("Unreachable retry loop")
 
@@ -265,4 +276,4 @@ class AnthropicProvider(ProviderState):
         if any(block["type"] != "text" for block in content):
             raise ValueError("Unsupported content block")
         text = "".join(block["text"] for block in content)
-        return Turn(answer=Answer.model_validate_json(text), assistant_content=content)
+        return Turn(answer=Answer.model_validate(json.loads(text)), assistant_content=content)

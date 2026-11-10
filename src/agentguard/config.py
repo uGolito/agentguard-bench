@@ -12,6 +12,7 @@ class RunConfig(StrictModel):
     provider: Literal["fake", "anthropic"] = "fake"
     model: str = "scripted-fixture-v1"
     prompt_version: Literal["baseline-v3"] = "baseline-v3"
+    output_protocol: Literal["prompt-json-v1", "anthropic-json-schema-v1"] = "prompt-json-v1"
     max_steps: int = Field(default=8, ge=1, le=100)
     max_requests: int = Field(default=100, ge=1)
     max_cost: float = Field(default=0.0, ge=0, allow_inf_nan=False)
@@ -31,6 +32,8 @@ class RunConfig(StrictModel):
 
     @model_validator(mode="after")
     def validate_live_settings(self) -> "RunConfig":
+        if self.output_protocol != "prompt-json-v1" and self.provider != "anthropic":
+            raise ValueError("Native JSON schema output requires provider=anthropic")
         if self.provider == "anthropic":
             if self.model_seed is not None:
                 raise ValueError(

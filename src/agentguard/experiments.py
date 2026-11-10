@@ -125,7 +125,9 @@ def run_paired(
                     }
                     break
     for mode, result in collected.items():
-        result["config"] = configs[mode].model_dump()
+        result["config"] = configs[mode].model_dump(
+            exclude={"output_protocol"} if configs[mode].provider == "fake" else set()
+        )
         result["scenario_snapshots"] = [s.model_dump() for s in scenarios]
         result["execution_order"] = [[r["scenario_id"], r["trial"]] for r in result["results"]]
         result["budget"] = budgets[mode].snapshot() if budgets[mode] else None
