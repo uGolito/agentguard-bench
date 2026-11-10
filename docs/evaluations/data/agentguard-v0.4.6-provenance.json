@@ -1,0 +1,15 @@
+{
+  "source_public_draft_sha256": "585a82ed1f54e5d4f22aa110cf225b605faed875e7f31aabfa30f1926a944145",
+  "csv_sha256": {
+    "agentguard-v0.4.6-paired.csv": "e56a806405abf7d9d1180ffde783c78d06a80ff639feb654ca539b8b3cc1699c",
+    "agentguard-v0.4.6-summary.csv": "34d0c102420d764c85ae7c6f36c27e55e4d27a09f57b1292e6b2e059c5b3c314"
+  },
+  "source_note": "Owner-supplied public publication candidates; no private raw artifacts inspected or copied.",
+  "generated_sha256": {
+    "agentguard-v0.4.6-live-evaluation.md": "e7777e3402074cc94042fb4ea4601e2b9753f2e5b6e85932e96da018c2caab53",
+    "assets/attack-success.svg": "03c62d0a7f447f764bbd33e0f16b142860b73e6b4d34bb834c299e496f95d4d7",
+    "assets/estimated-cost.svg": "a6047c8b6df4d12dd9342fc12f4ac79d26a4cf4644435aa50213980881ba1d1d",
+    "assets/median-latency.svg": "f8dbd76b5b1e83d69209595668e45870f8bb4c2f276872b0179f4a2d4204b646",
+    "assets/wrong-claims.svg": "c0a1c28ed138e38ba575e9bf68443f1d5413d43fcdc34e6ea9c71f4420393d73"
+  }
+}

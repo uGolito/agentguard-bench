@@ -10,3 +10,14 @@ dist/
 .env
 results/*
 !results/.gitkeep
+
+# Private evaluation inputs and secrets; intended public evaluation CSVs stay trackable.
+/private-results/
+/public-drafts/
+/publication-inputs/
+.env.*
+!.env.example
+**/journal.jsonl
+**/traces.jsonl
+**/run.json
+**/experiment.json

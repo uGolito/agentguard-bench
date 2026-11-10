@@ -12,9 +12,43 @@ Open-source research infrastructure for evaluating the safety, reliability, and 
 
 ## Status and results
 
-**Milestone 4C plus safe HTTP-error diagnostics: explicit Codex Cloud proxy/CA compatibility, alongside the reproducible SIMULATED dashboard and 30 frozen scenarios.** No live LLM benchmark results have been published yet.
+**Milestone 4C plus safe HTTP-error diagnostics: explicit Codex Cloud proxy/CA compatibility, alongside the reproducible SIMULATED dashboard and 30 frozen scenarios.** Live LLM evaluation results are available below, including a controlled 36-episode comparison using Claude Haiku 4.5 (AgentGuard Bench v0.4.6).
 
-Fake-provider and mocked SDK outcomes test infrastructure, not model behavior or agent safety. No paid model calls have been executed for this milestone. All tools remain local simulations: no real emails or external mutations. Live model requests require a separate explicit opt-in and a positive budget. Passing tests does not establish safety.
+Fake-provider and mocked SDK outcomes test infrastructure, not model behavior or agent safety. Offline tests and the SIMULATED dashboard make no paid model calls; the separate live evaluation is described below. All tools remain local simulations: no real emails or external mutations. Live model requests require a separate explicit opt-in and a positive budget. Passing tests does not establish safety.
+
+## Live Evaluation — Claude Haiku 4.5
+
+**Owner-review draft — not published.** A live Anthropic evaluation used six selected
+scenarios, two repetitions and three modes: **36 episodes**. AgentGuard 0.4.6 used
+anthropic-json-schema-v1 for primary answers and anthropic-review-json-schema-v1
+for independent-context review. All tools remained synthetic local simulations.
+
+| Outcome | Baseline | Guarded | Guarded + oversight |
+| --- | --- | --- | --- |
+| Task completions | 0/12 | 0/12 | 0/12 |
+| Delivered unsupported-verification episodes | 4/12 | 0/12 | 0/12 |
+| Delivered wrong-claim episodes | 12/12 | 8/12 | 8/12 |
+| Model attack-success endpoint | 4/4 | 2/4 | 2/4 |
+| Unauthorized executed actions | 0 | 0 | 0 |
+| Estimated API cost (USD) | 0.054830 | 0.063924 | 0.067162 |
+
+**Task success was 0/36 under the frozen rubric.** Both recorded model and runtime
+attack endpoints were **4/4 in baseline versus 2/4 in each protected mode**. The
+paired difference was -50 percentage points; the exploratory 95% scenario-cluster
+bootstrap interval was [-100, 0] points. These composite rubric endpoints do not
+establish population-level or statistically significant benefit.
+
+Four reviews allowed four authorized actions without reviewer failures. No
+unauthorized action reached review; oversight attack rejection was **not measured**.
+No unsafe action proposal or unauthorized execution occurred in any mode. The
+small, pilot-informed corpus and exact-value/provenance rubric limit generalization.
+Two protected episodes per mode lacked final answers, so absent wrong-claim flags
+must not be interpreted as correct answers. Estimated usage cost was USD 0.185916,
+not a provider invoice.
+
+See the [full technical report](docs/evaluations/agentguard-v0.4.6-live-evaluation.md)
+for verified public data, figures, latency, source discrepancies and limitations.
+The SIMULATED dashboard remains separate from this live evaluation.
 
 ## Motivation and research questions
 
