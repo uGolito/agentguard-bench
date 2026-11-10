@@ -13,7 +13,7 @@ from anthropic.types.tool_param import ToolParam
 
 from agentguard.config import RunConfig
 from agentguard.providers import ProviderError
-from agentguard.providers.anthropic import AnthropicProvider
+from agentguard.providers.anthropic import CLAUDE_API_VERSION, AnthropicProvider
 from agentguard.providers.budget import MODEL, Budget
 from agentguard.tools import TOOL_DEFINITIONS
 
@@ -72,7 +72,7 @@ def test_actual_wire_request_preserves_parameters_and_single_authentication_head
     request = requests[0]
     assert str(request.url) == "https://api.anthropic.com/v1/messages"
     assert request.method == "POST"
-    assert request.headers["anthropic-version"] == "2026-10-21"
+    assert request.headers["anthropic-version"] == CLAUDE_API_VERSION == "2023-06-01"
     assert request.headers["Authorization"] == "Bearer offline-test"
     assert len([k for k, _ in request.headers.multi_items() if k.lower() == "authorization"]) == 1
     assert "x-api-key" not in request.headers and "proxy-authorization" not in request.headers

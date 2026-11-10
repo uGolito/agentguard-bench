@@ -265,13 +265,18 @@ def test_ci_gate_remains_before_transport_creation(monkeypatch):
             build(cfg)
 
 
-def test_comparison_rejects_hidden_transport_difference():
+@pytest.mark.parametrize("key", ["http_mode", "api_version"])
+def test_comparison_rejects_hidden_transport_difference(key):
     from agentguard.reporting import compare_runs
     from agentguard.runner import load_scenarios
 
     original = run(load_scenarios(Path("tests/fixtures/milestone3")), RunConfig())
     candidate = json.loads(json.dumps(original))
-    original["provider_metadata"]["http_mode"] = "direct"
-    candidate["provider_metadata"]["http_mode"] = "codex-cloud"
-    with pytest.raises(ValueError, match="http_mode differs"):
+    left, right = {
+        "http_mode": ("direct", "codex-cloud"),
+        "api_version": ("2023-06-01", "2026-10-21"),
+    }[key]
+    original["provider_metadata"][key] = left
+    candidate["provider_metadata"][key] = right
+    with pytest.raises(ValueError, match=f"{key} differs"):
         compare_runs(original, candidate)

@@ -53,3 +53,10 @@ The reservation audit found unsynchronized cap checks, amount-only settlement re
 - Add shared bounded diagnostics for primary/reviewer errors: allowlisted category, syntactically validated/redacted request ID, normalized content type, response shape, HTTP status and unknown origin. No raw HTTP error body/header or exception message persists.
 - Suppress confirmed raw dependency header logging; keep application logs. Restrict existing malformed HTTP-200 model tracing to assistant envelopes, excluding non-model error bodies.
 - Package 0.4.3; unchanged proxy/TLS, request/retry/budget controls, frozen assets, dependency lock and published SIMULATED results. HTTP 400 remote cause remains unresolved; no Anthropic request or new experimental run is performed for this patch.
+
+## 0.4.4 — documented sampling/API incompatibility correction (2026-11-10)
+
+- Supersedes the 0.4.3 unresolved sampling/version hypothesis: official migration guidance states that API 2026-10-21 rejects sampling parameters, even defaults. Pin 2023-06-01 in primary/reviewer constructors and clones to preserve the frozen temperature=0 protocol; do not silently adopt temperature 1 by omission.
+- Record API version separately from SDK version and reject version-mismatched comparisons. Keep model, service_tier, tools, authentication, proxy/TLS, request/retry and budget controls unchanged.
+- Allow safe_message only through whole known-template recognition and fixed canonical output. Unknown/freeform text and secrets remain excluded. Do not recover or fabricate the discarded original error message.
+- Package 0.4.4, no dependency/scenario/label/hypothesis/result changes. Unit mocks encode the documented rule; actual server success remains unverified. Provide tracked-source-only Docker rebuild and network-disabled checks, without executing a new smoke test or touching Jarvis/Hermes.

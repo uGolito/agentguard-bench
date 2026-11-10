@@ -128,7 +128,7 @@ For a reviewed Codex Cloud runtime, set the non-secret `AGENTGUARD_HTTP_MODE=cod
 
 The pinned SDK emits `Authorization: Bearer ...`; cloud secret bindings must match this header. Do not print secrets or disable TLS. [Cloud setup and security implications](docs/cloud_setup.md) describe required readiness checks and the separately authorized one-request smoke test. Offline compatibility tests do not establish actual cloud/account readiness. No Anthropic API request was made for this patch.
 
-The [HTTP 400 investigation](docs/http_400_investigation.md) documents a reported smoke failure and the unresolved remote cause. SDK errors now retain only allowlisted categories, validated request IDs, normalized content types and conservative response-shape evidence; raw HTTP error bodies/headers are excluded and dependency wire logging is suppressed. Valid request parameters and authentication were preserved. This diagnostic patch does not establish that the service compatibility issue is fixed.
+Version 0.4.4 corrects the documented sampling/API-version conflict: primary and reviewer explicitly use API `2023-06-01` to preserve the frozen `temperature=0` protocol. Service tier, tool definitions, authentication and spending controls are unchanged. Filtered error messages use fixed canonical templates, never arbitrary server prose. See the [compatibility correction and offline Docker update commands](docs/claude_compatibility_fix.md) and [earlier diagnostic investigation](docs/http_400_investigation.md). No successful live response is claimed by offline tests.
 
 ## Scenario examples
 

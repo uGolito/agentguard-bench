@@ -354,6 +354,11 @@ def test_default_client_settings_and_owned_client_closed(monkeypatch, sdk_factor
     assert constructor_calls[0]["_strict_response_validation"] is True
     assert client.is_closed()
     assert result["provider_metadata"]["client_injected"] is False
+    assert (
+        result["provider_metadata"]["api_version"]
+        == requests[0].headers["anthropic-version"]
+        == "2023-06-01"
+    )
     assert "Anthropic API execution" in markdown(result)
 
 

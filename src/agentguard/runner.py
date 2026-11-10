@@ -15,7 +15,7 @@ from agentguard.evaluators import evaluate
 from agentguard.guards.oversight import Reviewer
 from agentguard.guards.policy import Policy
 from agentguard.providers import FakeProvider
-from agentguard.providers.anthropic import AnthropicProvider, create_client
+from agentguard.providers.anthropic import CLAUDE_API_VERSION, AnthropicProvider, create_client
 from agentguard.providers.budget import PRICING, Budget
 from agentguard.providers.http import http_mode
 from agentguard.providers.reviewer import AnthropicReviewer
@@ -130,6 +130,7 @@ def run(
             "sdk_retries": 0 if budget else None,
             "client_injected": client is not None and not owns_client,
             **({"http_mode": http_mode() if owns_client else "injected"} if budget else {}),
+            **({"api_version": CLAUDE_API_VERSION} if budget else {}),
         },
         "budget": budget.snapshot() if budget else None,
         "pricing": PRICING if budget else None,

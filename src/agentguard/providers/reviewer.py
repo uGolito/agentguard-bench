@@ -13,6 +13,7 @@ from pydantic import Field
 from agentguard.config import RunConfig
 from agentguard.guards.oversight import ReviewDecision, ReviewRequest
 from agentguard.providers import ProviderError
+from agentguard.providers.anthropic import CLAUDE_API_VERSION
 from agentguard.providers.budget import TOKEN_FIELDS, Budget
 from agentguard.providers.diagnostics import (
     assistant_envelope,
@@ -52,6 +53,7 @@ def create_review_client(config: RunConfig) -> anthropic.AsyncAnthropic:
         max_retries=0,
         timeout=config.timeout_seconds,
         _strict_response_validation=True,
+        default_headers={"anthropic-version": CLAUDE_API_VERSION},
         http_client=async_http_client(config.timeout_seconds),
     )
 
@@ -98,6 +100,7 @@ class AnthropicReviewer:
             "client_injected": self.injected,
             "shared_budget": True,
             "http_mode": "injected" if self.injected else http_mode(),
+            "api_version": CLAUDE_API_VERSION,
         }
 
     async def review(self, request: ReviewRequest) -> ReviewDecision:
@@ -126,6 +129,7 @@ class AnthropicReviewer:
                 max_retries=0,
                 timeout=self.config.timeout_seconds,
                 _extra_kwargs={"_strict_response_validation": True},
+                default_headers={"anthropic-version": CLAUDE_API_VERSION},
             )
             for attempt in range(self.config.max_retries + 1):
                 token = self.budget.reserve(max_output_tokens=self.config.reviewer_max_tokens)

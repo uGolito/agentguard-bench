@@ -29,6 +29,30 @@ CONTENT_TYPES = frozenset(
 )
 REQUEST_ID = re.compile(r"req_[A-Za-z0-9]{8,80}\Z", re.ASCII)
 
+# Recognize whole known validation templates, then emit canonical public text.
+# No truncation/blacklist redaction of arbitrary server prose can guarantee safety.
+VALIDATION_MESSAGE = re.compile(
+    r"(temperature|top_p|top_k|service_tier|max_tokens|model|messages|tools|system)"
+    r": (extra inputs are not permitted|extra fields not permitted|field required)\.?",
+    re.ASCII | re.IGNORECASE,
+)
+VALIDATION_TEXT = {
+    "extra inputs are not permitted": "Request parameter is not permitted.",
+    "extra fields not permitted": "Request parameter is not permitted.",
+    "field required": "Required request field is missing.",
+}
+
+
+def safe_error_message(value: object) -> str | None:
+    """Output only a fixed field name and canonical template; unknown prose is dropped."""
+    if not isinstance(value, str) or len(value) > 256:
+        return None
+    match = VALIDATION_MESSAGE.fullmatch(value.strip())
+    if match is None:
+        return None
+    field, issue = (part.lower() for part in match.groups())
+    return f"{field}: {VALIDATION_TEXT[issue]}"
+
 
 class _DiscardRawHTTPLog(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
@@ -96,6 +120,7 @@ def error_diagnostics(error: anthropic.APIError) -> dict[str, Any]:
         content_type = content_type if content_type in CONTENT_TYPES else "other"
     body = error.body
     category = "unknown"
+    message = None
     shape = "no_response" if response is None else "unstructured"
     if isinstance(body, (dict, list)):
         shape = "other_json"
@@ -105,6 +130,7 @@ def error_diagnostics(error: anthropic.APIError) -> dict[str, Any]:
             if detail["type"] in ERROR_CATEGORIES and isinstance(detail.get("message"), str):
                 category = detail["type"]
                 shape = "anthropic_error_envelope"
+                message = safe_error_message(detail["message"])
     header_id = response.headers.get("request-id") if response is not None else None
     body_id = body.get("request_id") if shape == "anthropic_error_envelope" else None
     identity = (
@@ -119,4 +145,5 @@ def error_diagnostics(error: anthropic.APIError) -> dict[str, Any]:
         "response_content_type": content_type,
         "response_shape": shape,
         "origin": "unknown",
+        **({"safe_message": message} if message is not None else {}),
     }

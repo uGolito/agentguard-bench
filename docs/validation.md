@@ -93,3 +93,13 @@ Windows, Python 3.13.14, package 0.4.3; unchanged locked Anthropic SDK 2.4.0/dep
 - Frozen scenario files, hypotheses, first-live protocol, published SIMULATED results and dependency lock are unchanged against base 3d654118aac6fd2fe26a74005b411948a1dce9b0. Existing integration tests verify checked-in public artifact consistency; no standalone benchmark evaluation or Anthropic request was initiated.
 - Saved cloud metadata provides no header-substitution specification. Actual binding compatibility and origin of the operator-reported 400 remain unverified; do not infer them from a ready binding or allowed domain. No secret values, raw live traces or experimental findings were published.
 - No Anthropic calls, authentication probes, paid requests, retries of the earlier smoke, billing changes or GitHub Release occurred. Remote CI for the exact pushed commit is reported separately. A second diagnostic request still requires separate approval and cumulative accounting review.
+
+## 0.4.4 sampling/API correction — 2026-11-10
+
+Windows, Python 3.13.14, package 0.4.4, unchanged locked SDK/dependencies:
+
+- 244 offline tests passed (all prior 230 plus 14 parameterized/version/template cases); package coverage 97.63%, diagnostics helper 100%. Ruff lint/format, Bandit, pip check, tracked-file secret scan and dependency audit passed. Editable installation succeeded.
+- Official API migration documentation establishes the invalid combination of API 2026-10-21 and sampling parameters. Both clients and SDK clones now explicitly use 2023-06-01 while preserving temperature=0. Tests cover constructor headers, clone override, the documented rejection rule in an in-memory fixture, primary/reviewer success-shaped mock responses, usage settlement and API-version comparison controls. No remote success is inferred from mocks.
+- Useful error messages are restricted to whole known validation templates and canonical fixed output. Unknown text, appended secrets, long content and unsupported parameter names are dropped. Existing raw-body/header suppression and request-ID protection remain.
+- Frozen scenarios, labels, hypotheses, first-live protocol, published SIMULATED artifacts, dependency lock and Dockerfile remain unchanged. No benchmark scenarios or outcomes were adjusted to make tests pass.
+- No Anthropic API request, smoke test, paid call or remote VPS action occurred. Jarvis/Hermes were not accessed or changed. Docker build was not executed here; tracked-source archive build and network-disabled image checks are documented for the VPS. Remote CI status is reported against the exact published commit.

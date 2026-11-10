@@ -54,3 +54,7 @@ The frozen 24-episode A/B protocol remains $1 per mode / $2 total, 40 requests p
 ## HTTP error diagnostics and unresolved 400
 
 See http_400_investigation.md for local SDK evidence and hypotheses concerning the operator-reported first smoke failure. Ready binding metadata and an allowed domain do not prove effective Bearer placeholder substitution. The adapter now retains only safe structured HTTP-error fields; arbitrary error bodies, headers and exception strings remain excluded. Raw dependency wire logging is suppressed, while application logs and structured events remain available. Origin is unknown without independent provenance. Valid request parameters/authentication are unchanged. Do not interpret this patch as a confirmed remote fix or permission for a second request; review prior retained billing and obtain separate explicit authorization.
+
+## Sampling/API version correction in 0.4.4
+
+The primary and reviewer now explicitly use API 2023-06-01 to preserve temperature=0 under the published migration contract. The SDK version remains pinned at 2.4.0, and the Bearer/proxy/TLS configuration is unchanged. Requested API version is recorded separately from SDK version. See claude_compatibility_fix.md for evidence, limitations and offline-only image update commands. Do not reuse 0.4.3's assumption that sending temperature through extra_body is valid under API 2026-10-21.

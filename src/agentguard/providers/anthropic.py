@@ -19,6 +19,10 @@ from agentguard.providers.diagnostics import (
 from agentguard.providers.http import sync_http_client
 from agentguard.schemas import Answer, ToolCall, Turn
 
+# API 2026-10-21 rejects temperature. Keep the frozen temperature=0 protocol
+# on the documented legacy API instead of silently sampling at its default 1.
+CLAUDE_API_VERSION = "2023-06-01"
+
 
 def create_client(config: RunConfig) -> anthropic.Anthropic:
     """Only called after live opt-in; never load keys from files or alternate endpoints."""
@@ -35,6 +39,7 @@ def create_client(config: RunConfig) -> anthropic.Anthropic:
         max_retries=0,
         timeout=config.timeout_seconds,
         _strict_response_validation=True,
+        default_headers={"anthropic-version": CLAUDE_API_VERSION},
         http_client=sync_http_client(config.timeout_seconds),
     )
 
@@ -80,6 +85,7 @@ class AnthropicProvider(ProviderState):
             max_retries=0,
             timeout=config.timeout_seconds,
             _extra_kwargs={"_strict_response_validation": True},
+            default_headers={"anthropic-version": CLAUDE_API_VERSION},
         )
         self.tokens = dict.fromkeys(TOKEN_FIELDS, 0)
         self.usage_complete = True
@@ -111,8 +117,8 @@ class AnthropicProvider(ProviderState):
             )
             started = perf_counter()
             try:
-                # SDK 2 removed the typed temperature argument; the supported
-                # legacy snapshot still accepts it through official extra_body.
+                # SDK 2 removed the typed argument. The explicitly pinned legacy
+                # API permits temperature; never send it with API 2026-10-21.
                 parameters = {key: value for key, value in payload.items() if key != "temperature"}
                 response = self.client.messages.create(
                     **parameters, extra_body={"temperature": self.config.temperature}

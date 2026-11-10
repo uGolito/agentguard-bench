@@ -1,8 +1,10 @@
-# HTTP 400 investigation — unresolved remote cause
+# HTTP 400 investigation — version 0.4.3 history
 
 This patch investigates an operator-reported single-request smoke failure. No Anthropic requests, authentication probes or paid calls were made during this investigation. The original response body is unavailable; it cannot be recovered from the previous sanitized trace. No live benchmark results are published here.
 
-## Confirmed facts versus hypotheses
+**Update 2026-11-10:** official API migration documentation confirms that the outgoing temperature parameter conflicts with API 2026-10-21. Version 0.4.4 pins the older API to preserve sampling. The observations below describe the earlier 0.4.3 investigation; its unresolved version hypothesis is superseded by the [compatibility correction](claude_compatibility_fix.md). The original server message remains unavailable and live success is still untested.
+
+## Initial facts versus hypotheses (0.4.3)
 
 The locked installed SDK is Anthropic 2.4.0. These facts are established from its local source/types and in-memory wire tests, not remote server acceptance:
 
@@ -38,7 +40,7 @@ Endpoint, API version, model, temperature, service tier, message/tool definition
 
 Offline tests use only dummy credentials and in-memory transports, with application sockets/DNS blocked. They cover Anthropic-shaped JSON, proxy-shaped JSON/HTML, malicious category/content-type/request-ID fields, credential echoes, conflicting IDs, log/trace redaction, one attempt/no retry, retained reservations and fail-closed reviewer behavior. Wire tests pin the current SDK facts above. Existing frozen scenarios/hypotheses, dependency lock and public SIMULATED assets are unchanged. Only unit/integration validation is run; no new experimental evaluation is initiated.
 
-## Recommendation for a second smoke test
+## Initial recommendation (0.4.3; see the correction above)
 
 The remote HTTP 400 is **not proven fixed**. The patch fixes the diagnostic blind spot and confirmed raw-header logging exposure. Before any separately authorized second request, review the cloud binding's destination/header substitution semantics without viewing the secret, use this exact patched commit and inspect the previous run's retained-charge ledger. A new invocation resets its local ledger; it does not automatically subtract prior unknown charges from a cumulative $2 authorization.
 
